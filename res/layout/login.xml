@@ -30,6 +30,7 @@
             android:id="@+id/port"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:text="@string/default_port"
             android:hint="@string/port"
             android:inputType="number" />
     </LinearLayout>

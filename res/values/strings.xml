@@ -8,4 +8,6 @@
     
 	<string name="logging_in">Logging in…</string>    
     <string name="abort">Abort</string>
+    
+    <string name="default_port">5222</string>
 </resources>
