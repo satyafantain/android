@@ -19,6 +19,6 @@ public class AlreadyConnectedException extends XMPPException
 	 */
 	public AlreadyConnectedException()
 	{
-		// TODO Auto-generated constructor stub
+		// Nothing to do
 	}
 }
