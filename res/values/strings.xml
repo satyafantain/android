@@ -6,8 +6,14 @@
     <string name="port">Port</string>
     <string name="login">Login</string>
     
-	<string name="logging_in">Logging in…</string>    
+	<string name="logging_in">Logging in…</string> 
+	<string name="could_not_connect">Could not connect to the server.</string>
+	<string name="error_while_connecting">An error occured while connecting.</string>  
+	<string name="already_connected">You are already connected.</string> 
+	<string name="invalid_jid">Invalid Jabber ID.</string>
     <string name="abort">Abort</string>
     
     <string name="default_port">5222</string>
+    
+    <string name="ok">OK</string>
 </resources>
