@@ -154,8 +154,8 @@ public class LoginActivity extends Activity implements OnClickListener, ServiceC
 			animator.showNext();
 			if (result == null)
 			{
-				// TODO Go to the next activity
-				System.out.println("connected sucessfully");
+				Intent intent = new Intent(LoginActivity.this, MatchSelectionActivity.class);
+				startActivity(intent);
 				return;
 			}
 			Builder builder = new AlertDialog.Builder(LoginActivity.this);
@@ -184,6 +184,9 @@ public class LoginActivity extends Activity implements OnClickListener, ServiceC
 			 */
 			private String result = null;
 		
+			/**
+			 * Initializes a new {@link ConnectThread}
+			 */
 			public ConnectThread()
 			{
 				// Nothing to do

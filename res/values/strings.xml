@@ -5,6 +5,7 @@
     <string name="password">Password</string>
     <string name="port">Port</string>
     <string name="login">Login</string>
+    <string name="logout">Logout</string>
     
 	<string name="logging_in">Logging in…</string> 
 	<string name="could_not_connect">Could not connect to the server.</string>
@@ -16,4 +17,14 @@
     <string name="default_port">5222</string>
     
     <string name="ok">OK</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    
+    <string name="matchmaker_connection">Matchmaker connection</string>
+    <string name="matchmaker_connect">Search partner</string>
+    <string name="direct_connection">Direct connection</string>
+    <string name="direct_connect">Connect to partner</string>
+    
+    <string name="really_logout">Do you really want to log out?</string>
+    
 </resources>
