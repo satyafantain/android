@@ -14,7 +14,6 @@
         android:orientation="vertical" >
 
         <TextView
-            android:id="@+id/textView1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/matchmaker_connection"
@@ -27,7 +26,6 @@
             android:text="@string/matchmaker_connect" />
 
         <TextView
-            android:id="@+id/textView2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="50dp"
@@ -35,7 +33,7 @@
             android:textAppearance="?android:attr/textAppearanceLarge" />
 
         <EditText
-            android:id="@+id/editText1"
+            android:id="@+id/direct_jid"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:ems="10"
@@ -43,7 +41,7 @@
             android:inputType="textEmailAddress" />
 
         <Button
-            android:id="@+id/button2"
+            android:id="@+id/direct_connect"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/direct_connect" />
