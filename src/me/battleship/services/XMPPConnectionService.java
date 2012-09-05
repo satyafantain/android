@@ -46,7 +46,7 @@ public class XMPPConnectionService extends Service
 		xmppConnection.disconnect();
 	}
 
-	/**onDestroy
+	/**
 	 * A binder for the {@link XMPPConnectionService}
 	 * 
 	 * @author Manuel Vögele
