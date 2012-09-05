@@ -36,7 +36,7 @@ public class MatchSelectionActivity extends Activity implements OnClickListener,
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.match_selection);
 		findViewById(R.id.logout_button).setOnClickListener(this);
-		// TODO OnClick for matchmaker connect
+		findViewById(R.id.matchmaker_connect).setOnClickListener(this);
 		// TODO OnClick for direct connect
 		Intent intent = new Intent(this, XMPPConnectionService.class);
 		bindService(intent, this, BIND_AUTO_CREATE);
@@ -63,7 +63,13 @@ public class MatchSelectionActivity extends Activity implements OnClickListener,
 	@Override
 	public void onClick(View v)
 	{
-		if (v.getId() == R.id.logout_button)
+		if (v.getId() == R.id.matchmaker_connect)
+		{
+			// TODO Implement connecting via matchmaker
+			Intent intent = new Intent(this, GameActivity.class);
+			startActivity(intent);
+		}
+		else if (v.getId() == R.id.logout_button)
 		{
 			connection.disconnect();
 			finish();
