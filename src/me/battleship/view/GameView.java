@@ -13,59 +13,76 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 /**
- * A thread rendering the game 
- *
+ * A thread rendering the game
+ * 
  * @author Manuel Vögele
  */
 public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Callback
 {
 	/** Indicates how many px are needed for 1 dp **/
 	private final float dp = getContext().getResources().getDisplayMetrics().density;
-	
+
 	/** Indicates whether the thread can draw on the surface or not **/
 	private volatile boolean canDraw = false;
-	
+
+	/** Indicates whether the view was initialized - it may not be drawn before */
+	private volatile boolean initialized = false;
+
 	/** The screen to draw in **/
 	private volatile Rect screen;
-	
+
 	/** The area the gird should be drawn in **/
 	private volatile Rect drawArea;
-	
+
 	/** The pos for the large playground **/
 	private volatile Rect playgroundLarge;
-	
+
 	/** The pos for the small playground **/
 	private volatile Rect playgroundSmall;
-	
+
+	/** The own playground **/
+	private volatile Playground ownPlayground;
+
+	/** The opponents playground **/
+	private volatile Playground opponentPlayground;
+
 	@SuppressWarnings("javadoc")
 	public GameView(Context context)
 	{
 		super(context);
-		initialize();
+		getHolder().addCallback(this);
 	}
 
 	@SuppressWarnings("javadoc")
 	public GameView(Context context, AttributeSet attrs)
 	{
 		super(context, attrs);
-		initialize();
+		getHolder().addCallback(this);
 	}
 
 	@SuppressWarnings("javadoc")
 	public GameView(Context context, AttributeSet attrs, int defStyle)
 	{
 		super(context, attrs, defStyle);
-		initialize();
-	}
-	
-	/**
-	 * Initializes the {@link GameView}
-	 */
-	private void initialize()
-	{
 		getHolder().addCallback(this);
 	}
-	
+
+	/**
+	 * Initializes the {@link GameView}
+	 * 
+	 * @param ownPlayground
+	 *           the own playground
+	 * @param opponentPlayground
+	 *           the opponents playground
+	 */
+	@SuppressWarnings("hiding")
+	public void initialize(Playground ownPlayground, Playground opponentPlayground)
+	{
+		this.ownPlayground = ownPlayground;
+		this.opponentPlayground = opponentPlayground;
+		initialized = true;
+	}
+
 	@Override
 	public void run()
 	{
@@ -87,10 +104,18 @@ public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Cal
 
 	/**
 	 * Draws the view
+	 * 
+	 * @throws IllegalStateException
+	 *            if the view is not initialized
 	 */
-	public synchronized void draw()
+	public synchronized void draw() throws IllegalStateException
 	{
-		if (!canDraw) {
+		if (!initialized)
+		{
+			throw new IllegalStateException("The view is not initialized");
+		}
+		if (!canDraw)
+		{
 			return;
 		}
 		SurfaceHolder holder = getHolder();
@@ -104,20 +129,25 @@ public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Cal
 			}
 		}
 		Paint paint = new Paint();
-		paint.setARGB(255,255,255,255);
+		paint.setARGB(255, 255, 255, 255);
 		drawGrid(canvas, playgroundLarge, Playground.SIZE, Playground.SIZE, paint);
 		drawGrid(canvas, playgroundSmall, Playground.SIZE, Playground.SIZE, paint);
 		holder.unlockCanvasAndPost(canvas);
 	}
-	
+
 	/**
 	 * Draws a grid
 	 * 
-	 * @param canvas the canvas to draw on
-	 * @param grid the grid to draw
-	 * @param horizontalCells no of horizontal cells
-	 * @param verticalCells no of vertical cells
-	 * @param paint the paint
+	 * @param canvas
+	 *           the canvas to draw on
+	 * @param grid
+	 *           the grid to draw
+	 * @param horizontalCells
+	 *           no of horizontal cells
+	 * @param verticalCells
+	 *           no of vertical cells
+	 * @param paint
+	 *           the paint
 	 */
 	private static void drawGrid(Canvas canvas, Rect grid, int horizontalCells, int verticalCells, Paint paint)
 	{
@@ -136,7 +166,7 @@ public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Cal
 			canvas.drawLine(grid.left, y, grid.right, y, paint);
 		}
 	}
-	
+
 	@Override
 	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)
 	{
@@ -151,22 +181,24 @@ public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Cal
 		final int largeFieldSize = width - 2 * border;
 		playgroundLarge = new Rect(border, size + largeFieldMarginTop, border + largeFieldSize, size + largeFieldMarginTop + largeFieldSize);
 	}
-	
+
 	@Override
 	public void surfaceCreated(SurfaceHolder holder)
 	{
 		canDraw = true;
 	}
-	
+
 	@Override
 	public void surfaceDestroyed(SurfaceHolder holder)
 	{
 		canDraw = false;
 	}
-	
+
 	/**
 	 * Converts a dp value to a px value
-	 * @param tDP the dp value
+	 * 
+	 * @param tDP
+	 *           the dp value
 	 * @return the px value
 	 */
 	private int dpToPx(float tDP)
