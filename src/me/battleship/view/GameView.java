@@ -138,7 +138,7 @@ public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Cal
 		}
 		SurfaceHolder holder = getHolder();
 		Canvas canvas = holder.lockCanvas(screen);
-		Bitmap water = BitmapFactory.decodeResource(getContext().getResources(), R.drawable.water);
+		Bitmap water = BitmapFactory.decodeResource(getContext().getResources(), R.drawable.background);
 		for (int y = 0;y < screen.height();y += water.getHeight())
 		{
 			for (int x = 0;x < screen.width();x += water.getWidth())
