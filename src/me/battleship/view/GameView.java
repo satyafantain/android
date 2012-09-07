@@ -1,7 +1,10 @@
 package me.battleship.view;
 
+import me.battleship.Orientation;
 import me.battleship.Playground;
+import me.battleship.PlaygroundField;
 import me.battleship.R;
+import me.battleship.Ship;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -9,6 +12,7 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -19,6 +23,9 @@ import android.view.SurfaceView;
  */
 public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Callback
 {
+	/** The log tag **/
+	public final static String LOG_TAG = GameView.class.getSimpleName();
+
 	/** Indicates how many px are needed for 1 dp **/
 	private final float dp = getContext().getResources().getDisplayMetrics().density;
 
@@ -30,9 +37,6 @@ public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Cal
 
 	/** The screen to draw in **/
 	private volatile Rect screen;
-
-	/** The area the gird should be drawn in **/
-	private volatile Rect drawArea;
 
 	/** The pos for the large playground **/
 	private volatile Rect playgroundLarge;
@@ -90,7 +94,21 @@ public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Cal
 		{
 			if (Thread.interrupted())
 				return;
-			draw();
+			try
+			{
+				draw();
+			}
+			catch (NullPointerException e)
+			{
+				if (!canDraw)
+				{
+					Log.i(LOG_TAG, "A null pointer exception was caught - was the surface destroyed?", e);
+				}
+				else
+				{
+					throw e;
+				}
+			}
 			try
 			{
 				Thread.sleep(20);
@@ -128,11 +146,44 @@ public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Cal
 				canvas.drawBitmap(water, x, y, null);
 			}
 		}
+		drawPlayground(canvas, ownPlayground, playgroundLarge, getContext());
+		drawPlayground(canvas, opponentPlayground, playgroundSmall, getContext());
+		holder.unlockCanvasAndPost(canvas);
+	}
+
+	/**
+	 * Draws the specified playground to the specified canvas at the position
+	 * specified by pos
+	 * 
+	 * @param canvas
+	 *           the canvas to draw on
+	 * @param playground
+	 *           the playground to draw
+	 * @param pos
+	 *           the position to draw the playground on
+	 * @param context
+	 *           the context
+	 */
+	private static void drawPlayground(Canvas canvas, Playground playground, Rect pos, Context context)
+	{
 		Paint paint = new Paint();
 		paint.setARGB(255, 255, 255, 255);
-		drawGrid(canvas, playgroundLarge, Playground.SIZE, Playground.SIZE, paint);
-		drawGrid(canvas, playgroundSmall, Playground.SIZE, Playground.SIZE, paint);
-		holder.unlockCanvasAndPost(canvas);
+		drawGrid(canvas, pos, Playground.SIZE, Playground.SIZE, paint);
+		for (int y = 0;y < Playground.SIZE;y++)
+		{
+			for (int x = 0;x < Playground.SIZE;x++)
+			{
+				PlaygroundField field = playground.getField(x, y);
+				if (field.isShip())
+				{
+					Ship ship = field.getShip();
+					if (ship.getX() == x && ship.getY() == y)
+					{
+						drawShip(canvas, ship, pos, context);
+					}
+				}
+			}
+		}
 	}
 
 	/**
@@ -167,12 +218,52 @@ public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Cal
 		}
 	}
 
+	/**
+	 * Draws a ship to the playground
+	 * 
+	 * @param canvas
+	 *           the canvas to draw on
+	 * @param ship
+	 *           the ship to draw
+	 * @param playgroundPos
+	 *           the position of the playground
+	 * @param context
+	 *           the context
+	 */
+	private static void drawShip(Canvas canvas, Ship ship, Rect playgroundPos, Context context)
+	{
+		Bitmap image = BitmapFactory.decodeResource(context.getResources(), ship.getDrawable());
+		if (ship.getOrientation() == Orientation.HORIZONTAL)
+		{
+			Bitmap result = Bitmap.createBitmap(image.getHeight(), image.getWidth(), image.getConfig());
+			Canvas tmpCanvas = new Canvas(result);
+			tmpCanvas.rotate(90, result.getWidth() / 2, result.getHeight() / 2);
+			tmpCanvas.drawBitmap(image, 0, 0, null);
+			image = result;
+		}
+		int fieldsize = (playgroundPos.right - playgroundPos.left) / Playground.SIZE;
+		int left = ship.getX() * fieldsize + playgroundPos.left + 1;
+		int top = ship.getY() * fieldsize + playgroundPos.top + 1;
+		int right, bottom;
+		if (ship.getOrientation() == Orientation.VERTICAL)
+		{
+			right = left + fieldsize - 2;
+			bottom = top + ship.getSize() * fieldsize - 2;
+		}
+		else
+		{
+			right = left + ship.getSize() * fieldsize - 2;
+			bottom = top + fieldsize - 2;
+		}
+		Rect pos = new Rect(left, top, right, bottom);
+		canvas.drawBitmap(image, null, pos, null);
+	}
+
 	@Override
 	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)
 	{
 		screen = new Rect(0, 0, width, height);
 		int border = dpToPx(8);
-		drawArea = new Rect(border, border, width - border, height - border);
 		final int smallFieldSize = dpToPx(5);
 		int oneDP = dpToPx(1);
 		int size = (smallFieldSize + oneDP) * Playground.SIZE + oneDP + border;
