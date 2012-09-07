@@ -233,30 +233,24 @@ public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Cal
 	private static void drawShip(Canvas canvas, Ship ship, Rect playgroundPos, Context context)
 	{
 		Bitmap image = BitmapFactory.decodeResource(context.getResources(), ship.getDrawable());
-		if (ship.getOrientation() == Orientation.HORIZONTAL)
-		{
-			Bitmap result = Bitmap.createBitmap(image.getHeight(), image.getWidth(), image.getConfig());
-			Canvas tmpCanvas = new Canvas(result);
-			tmpCanvas.rotate(90, result.getWidth() / 2, result.getHeight() / 2);
-			tmpCanvas.drawBitmap(image, 0, 0, null);
-			image = result;
-		}
 		int fieldsize = (playgroundPos.right - playgroundPos.left) / Playground.SIZE;
 		int left = ship.getX() * fieldsize + playgroundPos.left + 1;
 		int top = ship.getY() * fieldsize + playgroundPos.top + 1;
-		int right, bottom;
+		int right = left + fieldsize - 2;
+		int bottom = top + ship.getSize() * fieldsize - 2;
+		Rect pos = new Rect(left, top, right, bottom);
 		if (ship.getOrientation() == Orientation.VERTICAL)
 		{
-			right = left + fieldsize - 2;
-			bottom = top + ship.getSize() * fieldsize - 2;
+			canvas.drawBitmap(image, null, pos, null);
 		}
 		else
 		{
-			right = left + ship.getSize() * fieldsize - 2;
-			bottom = top + fieldsize - 2;
+			canvas.save();
+			canvas.rotate(90, left + fieldsize / 2, top + fieldsize / 2);
+			canvas.translate(0, -(ship.getSize() - 1) * fieldsize);
+			canvas.drawBitmap(image, null, pos, null);
+			canvas.restore();
 		}
-		Rect pos = new Rect(left, top, right, bottom);
-		canvas.drawBitmap(image, null, pos, null);
 	}
 
 	@Override
