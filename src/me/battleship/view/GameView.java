@@ -44,6 +44,9 @@ public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Cal
 	/** The pos for the small playground **/
 	private volatile Rect playgroundSmall;
 
+	/** The black area in the bottom of the screen **/
+	private volatile Rect bottomArea;
+
 	/** The own playground **/
 	private volatile Playground ownPlayground;
 
@@ -148,6 +151,9 @@ public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Cal
 		}
 		drawPlayground(canvas, ownPlayground, playgroundLarge, getContext());
 		drawPlayground(canvas, opponentPlayground, playgroundSmall, getContext());
+		Paint paint = new Paint();
+		paint.setARGB(100, 0, 0, 0);
+		canvas.drawRect(bottomArea, paint);
 		holder.unlockCanvasAndPost(canvas);
 	}
 
@@ -274,9 +280,17 @@ public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Cal
 		int oneDP = dpToPx(1);
 		int size = (smallFieldSize + oneDP) * Playground.SIZE + oneDP + border;
 		playgroundSmall = new Rect(border, border, size, size);
-		final int largeFieldMarginTop = dpToPx(5);
-		final int largeFieldSize = width - 2 * border;
-		playgroundLarge = new Rect(border, size + largeFieldMarginTop, border + largeFieldSize, size + largeFieldMarginTop + largeFieldSize);
+
+		float fieldsize = (height - playgroundSmall.bottom - 2 * border) / (Playground.SIZE + 3);
+		int largeFieldSize = Math.round(fieldsize * Playground.SIZE);
+		int spaceW = width - 2 * border;
+		if (largeFieldSize > spaceW)
+		{
+			largeFieldSize = spaceW;
+			fieldsize = largeFieldSize / Playground.SIZE;
+		}
+		playgroundLarge = new Rect(border, size + border, border + largeFieldSize, size + border + largeFieldSize);
+		bottomArea = new Rect(0, playgroundLarge.bottom + border, width, height);
 	}
 
 	@Override
