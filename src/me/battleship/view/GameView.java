@@ -177,7 +177,7 @@ public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Cal
 				if (field.isShip())
 				{
 					Ship ship = field.getShip();
-					if (ship.getX() == x && ship.getY() == y)
+					if (ship != null && ship.getX() == x && ship.getY() == y)
 					{
 						drawShip(canvas, ship, pos, context);
 					}
