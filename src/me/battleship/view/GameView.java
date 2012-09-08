@@ -182,6 +182,18 @@ public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Cal
 						drawShip(canvas, ship, pos, context);
 					}
 				}
+				if (field.isHit())
+				{
+					int resource = (field.isShip() ? R.drawable.hit : R.drawable.water);
+					int fieldsize = (pos.right - pos.left) / Playground.SIZE;
+					int left = x * fieldsize + pos.left + 1;
+					int top = y * fieldsize + pos.top + 1;
+					int right = left + fieldsize;
+					int bottom = top + fieldsize;
+					Rect rect = new Rect(left, top, right, bottom);
+					Bitmap image = BitmapFactory.decodeResource(context.getResources(), resource);
+					canvas.drawBitmap(image, null, rect, null);
+				}
 			}
 		}
 	}
