@@ -1,6 +1,11 @@
 package me.battleship.view;
 
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+
 import me.battleship.Orientation;
+import me.battleship.PlaceableShip;
 import me.battleship.Playground;
 import me.battleship.PlaygroundField;
 import me.battleship.R;
@@ -53,6 +58,12 @@ public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Cal
 	/** The opponents playground **/
 	private volatile Playground opponentPlayground;
 
+	/** The own ships **/
+	private volatile List<Ship> ownShips;
+
+	/** The ships of the opponent **/
+	private volatile List<Ship> opponentShips;
+
 	@SuppressWarnings("javadoc")
 	public GameView(Context context)
 	{
@@ -81,12 +92,15 @@ public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Cal
 	 *           the own playground
 	 * @param opponentPlayground
 	 *           the opponents playground
+	 * @param ships
+	 *           the own ships
 	 */
 	@SuppressWarnings("hiding")
-	public void initialize(Playground ownPlayground, Playground opponentPlayground)
+	public void initialize(Playground ownPlayground, Playground opponentPlayground, List<Ship> ships)
 	{
 		this.ownPlayground = ownPlayground;
 		this.opponentPlayground = opponentPlayground;
+		ownShips = ships;
 		initialized = true;
 	}
 
@@ -149,11 +163,11 @@ public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Cal
 				canvas.drawBitmap(water, x, y, null);
 			}
 		}
-		drawPlayground(canvas, ownPlayground, playgroundLarge, getContext());
-		drawPlayground(canvas, opponentPlayground, playgroundSmall, getContext());
 		Paint paint = new Paint();
 		paint.setARGB(100, 0, 0, 0);
 		canvas.drawRect(bottomArea, paint);
+		drawPlayground(canvas, ownPlayground, playgroundLarge, ownShips, getContext());
+		drawPlayground(canvas, opponentPlayground, playgroundSmall, ownShips, getContext());
 		holder.unlockCanvasAndPost(canvas);
 	}
 
@@ -167,27 +181,25 @@ public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Cal
 	 *           the playground to draw
 	 * @param pos
 	 *           the position to draw the playground on
+	 * @param ships
+	 *           the ships to draw
 	 * @param context
 	 *           the context
 	 */
-	private static void drawPlayground(Canvas canvas, Playground playground, Rect pos, Context context)
+	private static void drawPlayground(Canvas canvas, Playground playground, Rect pos, Collection<Ship> ships, Context context)
 	{
 		Paint paint = new Paint();
 		paint.setARGB(255, 255, 255, 255);
 		drawGrid(canvas, pos, Playground.SIZE, Playground.SIZE, paint);
+		for (Ship ship : ships)
+		{
+			drawShip(canvas, ship, pos, context);
+		}
 		for (int y = 0;y < Playground.SIZE;y++)
 		{
 			for (int x = 0;x < Playground.SIZE;x++)
 			{
 				PlaygroundField field = playground.getField(x, y);
-				if (field.isShip())
-				{
-					Ship ship = field.getShip();
-					if (ship != null && ship.getX() == x && ship.getY() == y)
-					{
-						drawShip(canvas, ship, pos, context);
-					}
-				}
 				if (field.isHit())
 				{
 					int resource = (field.isShip() ? R.drawable.hit : R.drawable.water);
@@ -250,12 +262,23 @@ public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Cal
 	 */
 	private static void drawShip(Canvas canvas, Ship ship, Rect playgroundPos, Context context)
 	{
+		// TODO Remove bug drawing small ship alongside normal ship
 		Bitmap image = BitmapFactory.decodeResource(context.getResources(), ship.getDrawable());
 		int fieldsize = (playgroundPos.right - playgroundPos.left) / Playground.SIZE;
-		int left = ship.getX() * fieldsize + playgroundPos.left + 1;
-		int top = ship.getY() * fieldsize + playgroundPos.top + 1;
-		int right = left + fieldsize - 2;
-		int bottom = top + ship.getSize() * fieldsize - 2;
+		int left, top, right, bottom;
+		if (ship instanceof PlaceableShip && !((PlaceableShip) ship).isOnPlayground())
+		{
+			PlaceableShip pship = (PlaceableShip) ship;
+			left = pship.getDrawX();
+			top = pship.getDrawY();
+		}
+		else
+		{
+			left = ship.getX() * fieldsize + playgroundPos.left + 1;
+			top = ship.getY() * fieldsize + playgroundPos.top + 1;
+		}
+		right = left + fieldsize - 2;
+		bottom = top + ship.getSize() * fieldsize - 2;
 		Rect pos = new Rect(left, top, right, bottom);
 		if (ship.getOrientation() == Orientation.VERTICAL)
 		{
@@ -268,6 +291,28 @@ public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Cal
 			canvas.translate(0, -(ship.getSize() - 1) * fieldsize);
 			canvas.drawBitmap(image, null, pos, null);
 			canvas.restore();
+		}
+	}
+
+	/**
+	 * Moves the ship to its new position after a surface change if required
+	 * 
+	 * @param ship
+	 *           the ship
+	 * @param startX
+	 *           the x position where the ship should start
+	 * @param startY
+	 *           the y position where the ship should start
+	 * @param orientation
+	 *           the orientation
+	 */
+	private static void rearangePlaceableShip(PlaceableShip ship, int startX, int startY, Orientation orientation)
+	{
+		ship.setStartPos(startX, startY);
+		if (!ship.isOnPlayground())
+		{
+			ship.setOrientation(orientation);
+			ship.setDrawPos(startX, startY);
 		}
 	}
 
@@ -291,6 +336,27 @@ public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Cal
 		}
 		playgroundLarge = new Rect(border, size + border, border + largeFieldSize, size + border + largeFieldSize);
 		bottomArea = new Rect(0, playgroundLarge.bottom + border, width, height);
+
+		Iterator<Ship> iterator = ownShips.iterator();
+		Ship ship = iterator.next();
+		if (ship instanceof PlaceableShip)
+		{
+			int halfFieldsize = Math.round(fieldsize / 2);
+			int oneAndAHalfFieldsize = Math.round(fieldsize * 1.5f);
+			int threeAndAHalfFieldsize = Math.round(fieldsize * 3.5f);
+			int aircraftCarrierLeft = bottomArea.left + halfFieldsize;
+			int aircraftCarrierRight = aircraftCarrierLeft + Math.round(5 * fieldsize);
+			int submarineLeft = bottomArea.right - threeAndAHalfFieldsize;
+			rearangePlaceableShip((PlaceableShip) ship, aircraftCarrierLeft, bottomArea.top + halfFieldsize, Orientation.HORIZONTAL);
+			ship = iterator.next();
+			rearangePlaceableShip((PlaceableShip) ship, bottomArea.left + Math.round(fieldsize), bottomArea.bottom - oneAndAHalfFieldsize, Orientation.HORIZONTAL);
+			ship = iterator.next();
+			rearangePlaceableShip((PlaceableShip) ship, submarineLeft, bottomArea.top + halfFieldsize, Orientation.HORIZONTAL);
+			ship = iterator.next();
+			rearangePlaceableShip((PlaceableShip) ship, submarineLeft, bottomArea.bottom - oneAndAHalfFieldsize, Orientation.HORIZONTAL);
+			ship = iterator.next();
+			rearangePlaceableShip((PlaceableShip) ship, Math.round(aircraftCarrierRight + (submarineLeft - aircraftCarrierRight) / 2 - fieldsize / 2), bottomArea.top + bottomArea.height() / 2 - Math.round(fieldsize), Orientation.VERTICAL);
+		}
 	}
 
 	@Override

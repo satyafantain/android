@@ -180,6 +180,20 @@ public class Ship
 	}
 
 	/**
+	 * Sets the position of the ship
+	 * 
+	 * @param x
+	 *           the x position
+	 * @param y
+	 *           the y position
+	 */
+	public void setPos(int x, int y)
+	{
+		this.x = x;
+		this.y = y;
+	}
+
+	/**
 	 * Returns the orientation of the ship
 	 * 
 	 * @return the orientation of the ship
@@ -187,6 +201,17 @@ public class Ship
 	public Orientation getOrientation()
 	{
 		return orientation;
+	}
+
+	/**
+	 * Sets the orientation of the ship
+	 * 
+	 * @param orientation
+	 *           the orientation
+	 */
+	public void setOrientation(Orientation orientation)
+	{
+		this.orientation = orientation;
 	}
 
 	/**

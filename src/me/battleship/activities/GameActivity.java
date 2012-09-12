@@ -1,7 +1,13 @@
 package me.battleship.activities;
 
+import java.util.Arrays;
+import java.util.List;
+
+import me.battleship.PlaceableShip;
 import me.battleship.Playground;
 import me.battleship.R;
+import me.battleship.Ship;
+import me.battleship.ShipType;
 import me.battleship.view.GameView;
 import android.app.Activity;
 import android.os.Bundle;
@@ -26,6 +32,9 @@ public class GameActivity extends Activity
 	/** The opponents playground **/
 	private Playground opponentPlayground;
 
+	/** The own ships **/
+	private List<Ship> ships;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
 	{
@@ -35,7 +44,14 @@ public class GameActivity extends Activity
 		gameView = (GameView) findViewById(R.id.game);
 		ownPlayground = new Playground();
 		opponentPlayground = new Playground();
-		gameView.initialize(ownPlayground, opponentPlayground);
+		ships = Arrays.asList(new Ship[] {
+				new PlaceableShip(ShipType.AIRCRAFT_CARRIER),
+				new PlaceableShip(ShipType.BATTLESHIP),
+				new PlaceableShip(ShipType.SUBMARINE),
+				new PlaceableShip(ShipType.SUBMARINE),
+				new PlaceableShip(ShipType.DESTROYER)
+		});
+		gameView.initialize(ownPlayground, opponentPlayground, ships);
 		// TODO Bind game service
 	}
 
