@@ -2,6 +2,7 @@ package me.battleship.view;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
 import me.battleship.Orientation;
@@ -101,6 +102,8 @@ public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Cal
 		this.ownPlayground = ownPlayground;
 		this.opponentPlayground = opponentPlayground;
 		ownShips = ships;
+		// TODO Make real assignment
+		opponentShips = new LinkedList<Ship>();
 		initialized = true;
 	}
 
@@ -167,7 +170,7 @@ public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Cal
 		paint.setARGB(100, 0, 0, 0);
 		canvas.drawRect(bottomArea, paint);
 		drawPlayground(canvas, ownPlayground, playgroundLarge, ownShips, getContext());
-		drawPlayground(canvas, opponentPlayground, playgroundSmall, ownShips, getContext());
+		drawPlayground(canvas, opponentPlayground, playgroundSmall, opponentShips, getContext());
 		holder.unlockCanvasAndPost(canvas);
 	}
 
@@ -262,7 +265,6 @@ public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Cal
 	 */
 	private static void drawShip(Canvas canvas, Ship ship, Rect playgroundPos, Context context)
 	{
-		// TODO Remove bug drawing small ship alongside normal ship
 		Bitmap image = BitmapFactory.decodeResource(context.getResources(), ship.getDrawable());
 		int fieldsize = (playgroundPos.right - playgroundPos.left) / Playground.SIZE;
 		int left, top, right, bottom;
