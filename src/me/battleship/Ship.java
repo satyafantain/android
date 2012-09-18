@@ -78,6 +78,17 @@ public class Ship
 		}
 	}
 
+	public Ship(Ship ship)
+	{
+		this.type = ship.type;
+		this.x = ship.x;
+		this.y = ship.y;
+		this.orientation = ship.orientation;
+		this.size = ship.size;
+		this.drawable = ship.drawable;
+		this.fieldDestroyed = ship.fieldDestroyed.clone();
+	}
+
 	/**
 	 * Returns the size for the specified ship type
 	 * 

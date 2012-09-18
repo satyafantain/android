@@ -292,6 +292,24 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 	{
 		Bitmap image = BitmapManager.getBitmap(context.getResources(), ship.getDrawable());
 		int fieldsize = (playgroundPos.right - playgroundPos.left) / Playground.SIZE;
+		Rect pos = getShipRectangle(ship, playgroundPos);
+		if (ship.getOrientation() == Orientation.VERTICAL)
+		{
+			canvas.drawBitmap(image, null, pos, null);
+		}
+		else
+		{
+			canvas.save();
+			canvas.rotate(90, pos.left + fieldsize / 2, pos.top + fieldsize / 2);
+			canvas.translate(0, -(ship.getSize() - 1) * fieldsize);
+			canvas.drawBitmap(image, null, pos, null);
+			canvas.restore();
+		}
+	}
+
+	private static Rect getShipRectangle(Ship ship, Rect playgroundPos)
+	{
+		int fieldsize = (playgroundPos.right - playgroundPos.left) / Playground.SIZE;
 		int left, top, right, bottom;
 		if (ship instanceof PlaceableShip && !((PlaceableShip) ship).isOnPlayground())
 		{
@@ -306,19 +324,7 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 		}
 		right = left + fieldsize - 2;
 		bottom = top + ship.getSize() * fieldsize - 2;
-		Rect pos = new Rect(left, top, right, bottom);
-		if (ship.getOrientation() == Orientation.VERTICAL)
-		{
-			canvas.drawBitmap(image, null, pos, null);
-		}
-		else
-		{
-			canvas.save();
-			canvas.rotate(90, left + fieldsize / 2, top + fieldsize / 2);
-			canvas.translate(0, -(ship.getSize() - 1) * fieldsize);
-			canvas.drawBitmap(image, null, pos, null);
-			canvas.restore();
-		}
+		return new Rect(left, top, right, bottom);
 	}
 
 	/**
@@ -413,12 +419,12 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 	@Override
 	public boolean onTouch(View v, MotionEvent event)
 	{
+		int fieldsize = Math.round(playgroundLarge.width() / Playground.SIZE);
 		switch (event.getAction())
 		{
 			case MotionEvent.ACTION_DOWN:
 				int x = Math.round(event.getX());
 				int y = Math.round(event.getY());
-				int fieldsize = Math.round(playgroundLarge.width() / Playground.SIZE);
 				for (Ship ship : ownShips)
 				{
 					if (ship instanceof PlaceableShip)
@@ -458,7 +464,19 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 			case MotionEvent.ACTION_UP:
 				if (grabbedShip != null)
 				{
-					// TODO Place ship into gird
+					Rect snappingRect = new Rect(playgroundLarge.left - fieldsize / 2, playgroundLarge.top - fieldsize / 2, playgroundLarge.right, playgroundLarge.bottom);
+					if (snappingRect.contains(grabbedShip.getDrawX(), grabbedShip.getDrawY()))
+					{
+						int xpos = Math.round(((float) grabbedShip.getDrawX() - playgroundLarge.left) / playgroundLarge.width() * Playground.SIZE);
+						int ypos = Math.round(((float) grabbedShip.getDrawY() - playgroundLarge.top) / playgroundLarge.height() * Playground.SIZE);
+						grabbedShip.setPos(xpos, ypos);
+						Rect pos = getShipRectangle(new Ship(grabbedShip), playgroundLarge);
+						grabbedShip.setDrawPos(pos.left, pos.top);
+					}
+					else
+					{
+						grabbedShip.setDrawPos(grabbedShip.getStartX(), grabbedShip.getStartY());
+					}
 					grabbedShip = null;
 					return false;
 				}
