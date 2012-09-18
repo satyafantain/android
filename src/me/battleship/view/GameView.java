@@ -194,8 +194,8 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 		Paint paint = new Paint();
 		paint.setARGB(100, 0, 0, 0);
 		canvas.drawRect(bottomArea, paint);
-		drawPlayground(canvas, ownPlayground, playgroundLarge, ownShips, getContext());
 		drawPlayground(canvas, opponentPlayground, playgroundSmall, opponentShips, getContext());
+		drawPlayground(canvas, ownPlayground, playgroundLarge, ownShips, getContext());
 		holder.unlockCanvasAndPost(canvas);
 	}
 
