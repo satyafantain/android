@@ -12,6 +12,7 @@ import me.battleship.PlaygroundField;
 import me.battleship.R;
 import me.battleship.Ship;
 import me.battleship.manager.BitmapManager;
+import me.battleship.ui.Button;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -68,6 +69,9 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 
 	/** The ships of the opponent **/
 	private volatile List<Ship> opponentShips;
+
+	/** The accept button */
+	private volatile Button acceptButton;
 
 	/**
 	 * The x position on which the ship was grabbed relative to the ships x
@@ -194,6 +198,7 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 		Paint paint = new Paint();
 		paint.setARGB(100, 0, 0, 0);
 		canvas.drawRect(bottomArea, paint);
+		drawButton(canvas, acceptButton, getContext());
 		drawPlayground(canvas, opponentPlayground, playgroundSmall, opponentShips, getContext());
 		drawPlayground(canvas, ownPlayground, playgroundLarge, ownShips, getContext());
 		holder.unlockCanvasAndPost(canvas);
@@ -307,6 +312,35 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 		}
 	}
 
+	/**
+	 * Draws a button. Does nothing if <code>null</code> is passed
+	 * 
+	 * @param canvas
+	 *           the canvas to draw on
+	 * 
+	 * @param button
+	 *           the button
+	 * @param context
+	 *           the context
+	 */
+	private static void drawButton(Canvas canvas, Button button, Context context)
+	{
+		if (button != null)
+		{
+			Bitmap image = BitmapManager.getBitmap(context.getResources(), button.getDrawable());
+			canvas.drawBitmap(image, null, button.getLocation(), null);
+		}
+	}
+
+	/**
+	 * Returns the rectangle for the specified ship
+	 * 
+	 * @param ship
+	 *           the ship
+	 * @param playgroundPos
+	 *           the position of the playground the ship is on
+	 * @return the rectangle
+	 */
 	private static Rect getShipRectangle(Ship ship, Rect playgroundPos)
 	{
 		int fieldsize = (playgroundPos.right - playgroundPos.left) / Playground.SIZE;
@@ -349,6 +383,31 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 		}
 	}
 
+	/**
+	 * Sets the visibility of the accept button
+	 * 
+	 * @param visible
+	 *           the visibility
+	 */
+	private void setAcceptButtonVisible(boolean visible)
+	{
+		if (visible)
+		{
+			float fieldsize = playgroundLarge.width() / Playground.SIZE;
+			float halfFieldsize = fieldsize / 2;
+			float doubleFieldsize = fieldsize * 2;
+			int right = Math.round(bottomArea.right - halfFieldsize);
+			int top = Math.round(bottomArea.top + halfFieldsize);
+			int left = Math.round(right - doubleFieldsize);
+			int bottom = Math.round(top + doubleFieldsize);
+			acceptButton = new Button(new Rect(left, top, right, bottom), R.drawable.accept);
+		}
+		else
+		{
+			acceptButton = null;
+		}
+	}
+	
 	@Override
 	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)
 	{
@@ -472,12 +531,24 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 						grabbedShip.setPos(xpos, ypos);
 						Rect pos = getShipRectangle(new Ship(grabbedShip), playgroundLarge);
 						grabbedShip.setDrawPos(pos.left, pos.top);
+						grabbedShip.setOnPlayground(true);
 					}
 					else
 					{
 						grabbedShip.setDrawPos(grabbedShip.getStartX(), grabbedShip.getStartY());
+						grabbedShip.setOnPlayground(false);
 					}
 					grabbedShip = null;
+					for (Ship ship : ownShips)
+					{
+						PlaceableShip pShip = (PlaceableShip) ship;
+						if (!pShip.isOnPlayground())
+						{
+							setAcceptButtonVisible(false);
+							return false;
+						}
+					}
+					setAcceptButtonVisible(true);
 					return false;
 				}
 		}
