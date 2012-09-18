@@ -11,6 +11,7 @@ import me.battleship.Playground;
 import me.battleship.PlaygroundField;
 import me.battleship.R;
 import me.battleship.Ship;
+import me.battleship.manager.BitmapManager;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -289,7 +290,7 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 	 */
 	private static void drawShip(Canvas canvas, Ship ship, Rect playgroundPos, Context context)
 	{
-		Bitmap image = BitmapFactory.decodeResource(context.getResources(), ship.getDrawable());
+		Bitmap image = BitmapManager.getBitmap(context.getResources(), ship.getDrawable());
 		int fieldsize = (playgroundPos.right - playgroundPos.left) / Playground.SIZE;
 		int left, top, right, bottom;
 		if (ship instanceof PlaceableShip && !((PlaceableShip) ship).isOnPlayground())
