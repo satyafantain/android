@@ -19,15 +19,18 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
+import android.view.View.OnTouchListener;
 
 /**
  * A thread rendering the game
  * 
  * @author Manuel Vögele
  */
-public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Callback
+public class GameView extends SurfaceView implements Runnable, OnTouchListener, SurfaceHolder.Callback
 {
 	/** The log tag **/
 	public final static String LOG_TAG = GameView.class.getSimpleName();
@@ -65,11 +68,30 @@ public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Cal
 	/** The ships of the opponent **/
 	private volatile List<Ship> opponentShips;
 
+	/**
+	 * The x position on which the ship was grabbed relative to the ships x
+	 * position
+	 **/
+	private volatile int grabX;
+
+	/**
+	 * The y position on which the ship was grabbed relative to the ships y
+	 * position
+	 **/
+	private volatile int grabY;
+
+	/**
+	 * The ship which is actually moved across the screen by the player - this is
+	 * only needed while placing a ship
+	 **/
+	private volatile PlaceableShip grabbedShip;
+
 	@SuppressWarnings("javadoc")
 	public GameView(Context context)
 	{
 		super(context);
 		getHolder().addCallback(this);
+		setOnTouchListener(this);
 	}
 
 	@SuppressWarnings("javadoc")
@@ -77,6 +99,7 @@ public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Cal
 	{
 		super(context, attrs);
 		getHolder().addCallback(this);
+		setOnTouchListener(this);
 	}
 
 	@SuppressWarnings("javadoc")
@@ -84,6 +107,7 @@ public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Cal
 	{
 		super(context, attrs, defStyle);
 		getHolder().addCallback(this);
+		setOnTouchListener(this);
 	}
 
 	/**
@@ -383,5 +407,61 @@ public class GameView extends SurfaceView implements Runnable, SurfaceHolder.Cal
 	private int dpToPx(float tDP)
 	{
 		return Math.round(tDP * dp);
+	}
+
+	@Override
+	public boolean onTouch(View v, MotionEvent event)
+	{
+		switch (event.getAction())
+		{
+			case MotionEvent.ACTION_DOWN:
+				int x = Math.round(event.getX());
+				int y = Math.round(event.getY());
+				int fieldsize = Math.round(playgroundLarge.width() / Playground.SIZE);
+				for (Ship ship : ownShips)
+				{
+					if (ship instanceof PlaceableShip)
+					{
+						PlaceableShip pShip = (PlaceableShip) ship;
+						int left = pShip.getDrawX();
+						int top = pShip.getDrawY();
+						int right, bottom;
+						if (ship.getOrientation() == Orientation.HORIZONTAL)
+						{
+							right = left + ship.getSize() * fieldsize;
+							bottom = top + fieldsize;
+						}
+						else
+						{
+							right = left + fieldsize;
+							bottom = top + ship.getSize() * fieldsize;
+						}
+						Rect rect = new Rect(left, top, right, bottom);
+						if (rect.contains(x, y))
+						{
+							grabbedShip = pShip;
+							grabX = x - left;
+							grabY = y - top;
+							return true;
+						}
+					}
+				}
+			break;
+			case MotionEvent.ACTION_MOVE:
+				if (grabbedShip != null)
+				{
+					grabbedShip.setDrawPos(Math.round(event.getX() - grabX), Math.round(event.getY() - grabY));
+					return true;
+				}
+				break;
+			case MotionEvent.ACTION_UP:
+				if (grabbedShip != null)
+				{
+					// TODO Place ship into gird
+					grabbedShip = null;
+					return false;
+				}
+		}
+		return false;
 	}
 }
