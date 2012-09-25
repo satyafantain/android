@@ -505,6 +505,7 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 						Rect rect = new Rect(left, top, right, bottom);
 						if (rect.contains(x, y))
 						{
+							pShip.setOnPlayground(false);
 							grabbedShip = pShip;
 							grabX = x - left;
 							grabY = y - top;
