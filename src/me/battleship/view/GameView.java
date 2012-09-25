@@ -15,7 +15,6 @@ import me.battleship.manager.BitmapManager;
 import me.battleship.ui.Button;
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
@@ -187,7 +186,7 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 		}
 		SurfaceHolder holder = getHolder();
 		Canvas canvas = holder.lockCanvas(screen);
-		Bitmap water = BitmapFactory.decodeResource(getContext().getResources(), R.drawable.background);
+		Bitmap water = BitmapManager.getBitmap(getContext().getResources(), R.drawable.background);
 		for (int y = 0;y < screen.height();y += water.getHeight())
 		{
 			for (int x = 0;x < screen.width();x += water.getWidth())
@@ -242,7 +241,7 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 					int right = left + fieldsize;
 					int bottom = top + fieldsize;
 					Rect rect = new Rect(left, top, right, bottom);
-					Bitmap image = BitmapFactory.decodeResource(context.getResources(), resource);
+					Bitmap image = BitmapManager.getBitmap(context.getResources(), resource);
 					canvas.drawBitmap(image, null, rect, null);
 				}
 			}
