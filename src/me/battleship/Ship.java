@@ -1,5 +1,6 @@
 package me.battleship;
 
+import android.graphics.Rect;
 import android.util.Log;
 
 /**
@@ -30,6 +31,11 @@ public class Ship
 	/** The orientation of the ship */
 	private Orientation orientation;
 
+	/**
+	 * The full position of the ship
+	 */
+	private Rect pos;
+
 	/** An array containing the field that was destroyed */
 	private boolean fieldDestroyed[];
 
@@ -56,6 +62,7 @@ public class Ship
 		this.y = y;
 		this.orientation = orientation;
 		this.size = getSizeForType(type);
+		this.pos = getRectForPos(x, y, size, orientation);
 		switch (type)
 		{
 			case AIRCRAFT_CARRIER:
@@ -78,12 +85,19 @@ public class Ship
 		}
 	}
 
+	/**
+	 * Initializes a new {@link Ship} making a copy of an exsisting ship
+	 * 
+	 * @param ship
+	 *           the ship to make a copy of
+	 */
 	public Ship(Ship ship)
 	{
 		this.type = ship.type;
 		this.x = ship.x;
 		this.y = ship.y;
 		this.orientation = ship.orientation;
+		this.pos = ship.pos;
 		this.size = ship.size;
 		this.drawable = ship.drawable;
 		this.fieldDestroyed = ship.fieldDestroyed.clone();
@@ -112,6 +126,35 @@ public class Ship
 				Log.wtf(LOG_TAG, "Unrecognized value " + type + " in getSizeForType(ShipType)");
 				return -1;
 		}
+	}
+
+	/**
+	 * Returns the {@link Rect} for the specified position
+	 * 
+	 * @param x
+	 *           the x position
+	 * @param y
+	 *           the y position
+	 * @param size
+	 *           the ships size
+	 * @param orientation
+	 *           the orientation
+	 * @return the <code>Rect</code> for the specified position
+	 */
+	public static Rect getRectForPos(int x, int y, int size, Orientation orientation)
+	{
+		int right, bottom;
+		if (orientation == Orientation.VERTICAL)
+		{
+			right = x;
+			bottom = y + size - 1;
+		}
+		else
+		{
+			right = x + size - 1;
+			bottom = y;
+		}
+		return new Rect(x, y, right, bottom);
 	}
 
 	/**
@@ -202,6 +245,7 @@ public class Ship
 	{
 		this.x = x;
 		this.y = y;
+		this.pos = getRectForPos(x, y, size, orientation);
 	}
 
 	/**
@@ -223,6 +267,17 @@ public class Ship
 	public void setOrientation(Orientation orientation)
 	{
 		this.orientation = orientation;
+		this.pos = getRectForPos(x, y, size, orientation);
+	}
+
+	/**
+	 * Returns the pos of the ship
+	 * 
+	 * @return the pos
+	 */
+	public Rect getRect()
+	{
+		return pos;
 	}
 
 	/**
