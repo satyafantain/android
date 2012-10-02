@@ -1,9 +1,11 @@
 package me.battleship.view;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import me.battleship.Orientation;
 import me.battleship.PlaceableShip;
@@ -13,10 +15,12 @@ import me.battleship.R;
 import me.battleship.Ship;
 import me.battleship.manager.BitmapManager;
 import me.battleship.ui.Button;
+import me.battleship.utils.RectUtils;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Point;
 import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -227,25 +231,7 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 		{
 			drawShip(canvas, ship, pos, context);
 		}
-		for (int y = 0;y < Playground.SIZE;y++)
-		{
-			for (int x = 0;x < Playground.SIZE;x++)
-			{
-				PlaygroundField field = playground.getField(x, y);
-				if (field.isHit())
-				{
-					int resource = (field.isShip() ? R.drawable.hit : R.drawable.water);
-					int fieldsize = (pos.right - pos.left) / Playground.SIZE;
-					int left = x * fieldsize + pos.left + 1;
-					int top = y * fieldsize + pos.top + 1;
-					int right = left + fieldsize;
-					int bottom = top + fieldsize;
-					Rect rect = new Rect(left, top, right, bottom);
-					Bitmap image = BitmapManager.getBitmap(context.getResources(), resource);
-					canvas.drawBitmap(image, null, rect, null);
-				}
-			}
-		}
+		drawFieldMarks(canvas, pos, playground, ships, context);
 	}
 
 	/**
@@ -309,6 +295,103 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 			canvas.drawBitmap(image, null, pos, null);
 			canvas.restore();
 		}
+	}
+
+	/**
+	 * Draws the marks (such as hit, missed, invalid position for ship) on the
+	 * playground
+	 * 
+	 * @param canvas
+	 *           the canvas to draw on
+	 * @param playgroundPos
+	 *           the position of the playground
+	 * @param playground
+	 *           the playground
+	 * @param ships
+	 *           the ships on the playground
+	 * @param context
+	 *           the context
+	 */
+	private static void drawFieldMarks(Canvas canvas, Rect playgroundPos, Playground playground, Collection<Ship> ships, Context context)
+	{
+		int fieldsize = (playgroundPos.right - playgroundPos.left) / Playground.SIZE;
+
+		Set<Point> invalidFields = getInvalidFields(ships);
+		for (Point point : invalidFields)
+		{
+			int left = point.x * fieldsize + playgroundPos.left;
+			int top = point.y * fieldsize + playgroundPos.top;
+			int right = left + fieldsize;
+			int bottom = top + fieldsize;
+			canvas.save();
+			canvas.clipRect(left, top, right, bottom);
+			canvas.drawARGB(150, 255, 0, 0);
+			canvas.restore();
+		}
+
+		for (int y = 0;y < Playground.SIZE;y++)
+		{
+			for (int x = 0;x < Playground.SIZE;x++)
+			{
+				PlaygroundField field = playground.getField(x, y);
+				if (field.isHit())
+				{
+					int resource = (field.isShip() ? R.drawable.hit : R.drawable.water);
+					int left = x * fieldsize + playgroundPos.left + 1;
+					int top = y * fieldsize + playgroundPos.top + 1;
+					int right = left + fieldsize;
+					int bottom = top + fieldsize;
+					Rect rect = new Rect(left, top, right, bottom);
+					Bitmap image = BitmapManager.getBitmap(context.getResources(), resource);
+					canvas.drawBitmap(image, null, rect, null);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Returns the fields on which the specified ships overlap
+	 * 
+	 * @param ships
+	 *           the ships
+	 * @return the fields on which the specified ships overlap
+	 */
+	private static Set<Point> getInvalidFields(Collection<Ship> ships)
+	{
+		Set<Point> fields = new HashSet<Point>();
+		for (Ship ship : ships)
+		{
+			if (ship instanceof PlaceableShip && !((PlaceableShip) ship).isOnPlayground())
+			{
+				continue;
+			}
+			for (Ship ship2 : ships)
+			{
+				if (ship == ship2)
+					continue;
+				if (ship2 instanceof PlaceableShip && !((PlaceableShip) ship2).isOnPlayground())
+					continue;
+				Rect rect = RectUtils.getIntersection(ship.getRect(), ship2.getRect());
+				if (rect != null)
+				{
+					if (ship.getOrientation() == Orientation.HORIZONTAL)
+					{
+						for (int x = rect.left;x <= rect.right;x++)
+						{
+							fields.add(new Point(x, rect.top));
+						}
+					}
+					else
+					{
+						for (int y = rect.top;y <= rect.bottom;y++)
+						{
+							fields.add(new Point(rect.left, y));
+						}
+					}
+				}
+			}
+		}
+		return fields;
 	}
 
 	/**
