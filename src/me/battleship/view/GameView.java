@@ -612,9 +612,18 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 						int xpos = Math.round(((float) grabbedShip.getDrawX() - playgroundLarge.left) / playgroundLarge.width() * Playground.SIZE);
 						int ypos = Math.round(((float) grabbedShip.getDrawY() - playgroundLarge.top) / playgroundLarge.height() * Playground.SIZE);
 						grabbedShip.setPos(xpos, ypos);
-						Rect pos = getShipRectangle(new Ship(grabbedShip), playgroundLarge);
-						grabbedShip.setDrawPos(pos.left, pos.top);
-						grabbedShip.setOnPlayground(true);
+						Rect rect = grabbedShip.getRect();
+						if (rect.left < 0 || rect.top < 0 || rect.right >= Playground.SIZE || rect.bottom >= Playground.SIZE)
+						{
+							grabbedShip.setDrawPos(grabbedShip.getStartX(), grabbedShip.getStartY());
+							grabbedShip.setOnPlayground(false);
+						}
+						else
+						{
+							Rect pos = getShipRectangle(new Ship(grabbedShip), playgroundLarge);
+							grabbedShip.setDrawPos(pos.left, pos.top);
+							grabbedShip.setOnPlayground(true);
+						}
 					}
 					else
 					{
