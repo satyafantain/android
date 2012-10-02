@@ -631,6 +631,11 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 							return false;
 						}
 					}
+					if (getInvalidFields(ownShips).size() > 0)
+					{
+						setAcceptButtonVisible(false);
+						return false;
+					}
 					setAcceptButtonVisible(true);
 					return false;
 				}
