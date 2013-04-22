@@ -425,22 +425,22 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 	 */
 	private static Rect getShipRectangle(Ship ship, Rect playgroundPos)
 	{
-		int fieldsize = (playgroundPos.right - playgroundPos.left) / Playground.SIZE;
+		double fieldsize = (playgroundPos.right - playgroundPos.left) / Playground.SIZE + 0.5;
 		int left, top, right, bottom;
 		if (ship instanceof PlaceableShip && !((PlaceableShip) ship).isOnPlayground())
 		{
 			PlaceableShip pship = (PlaceableShip) ship;
-			left = pship.getDrawX();
-			top = pship.getDrawY();
+			left = pship.getDrawX() + 2;
+			top = pship.getDrawY() + 1;
 		}
 		else
 		{
-			left = ship.getX() * fieldsize + playgroundPos.left + 1;
-			top = ship.getY() * fieldsize + playgroundPos.top + 1;
+			left = (int) (ship.getX() * fieldsize + playgroundPos.left + 1);
+			top = (int) (ship.getY() * fieldsize + playgroundPos.top + 1);
 		}
-		right = left + fieldsize - 2;
-		bottom = top + ship.getSize() * fieldsize - 2;
-		return new Rect(left, top, right, bottom);
+		right = (int) (left + fieldsize);
+		bottom = (int) (top + ship.getSize() * fieldsize - 1);
+		return new Rect(left, top, right, bottom - 1);
 	}
 
 	/**
