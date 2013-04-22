@@ -281,7 +281,7 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 	private static void drawShip(Canvas canvas, Ship ship, Rect playgroundPos, Context context)
 	{
 		Bitmap image = BitmapManager.getBitmap(context.getResources(), ship.getDrawable());
-		int fieldsize = (playgroundPos.right - playgroundPos.left) / Playground.SIZE;
+		double fieldsize = getFieldsize(playgroundPos);
 		Rect pos = getShipRectangle(ship, playgroundPos);
 		if (ship.getOrientation() == Orientation.VERTICAL)
 		{
@@ -290,8 +290,8 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 		else
 		{
 			canvas.save();
-			canvas.rotate(90, pos.left + fieldsize / 2, pos.top + fieldsize / 2);
-			canvas.translate(0, -(ship.getSize() - 1) * fieldsize);
+			canvas.rotate(90, (int)(pos.left + fieldsize / 2), (int) (pos.top + fieldsize / 2));
+			canvas.translate(0, (int) (-(ship.getSize() - 1) * fieldsize));
 			canvas.drawBitmap(image, null, pos, null);
 			canvas.restore();
 		}
@@ -314,15 +314,15 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 	 */
 	private static void drawFieldMarks(Canvas canvas, Rect playgroundPos, Playground playground, Collection<Ship> ships, Context context)
 	{
-		int fieldsize = (playgroundPos.right - playgroundPos.left) / Playground.SIZE;
+		double fieldsize = getFieldsize(playgroundPos);
 
 		Set<Point> invalidFields = getInvalidFields(ships);
 		for (Point point : invalidFields)
 		{
-			int left = point.x * fieldsize + playgroundPos.left;
-			int top = point.y * fieldsize + playgroundPos.top;
-			int right = left + fieldsize;
-			int bottom = top + fieldsize;
+			int left = (int) (point.x * fieldsize) + playgroundPos.left;
+			int top = (int) (point.y * fieldsize) + playgroundPos.top;
+			int right = left + (int) fieldsize;
+			int bottom = top + (int) fieldsize;
 			canvas.save();
 			canvas.clipRect(left, top, right, bottom);
 			canvas.drawARGB(150, 255, 0, 0);
@@ -337,10 +337,10 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 				if (field.isHit())
 				{
 					int resource = (field.isShip() ? R.drawable.hit : R.drawable.water);
-					int left = x * fieldsize + playgroundPos.left + 1;
-					int top = y * fieldsize + playgroundPos.top + 1;
-					int right = left + fieldsize;
-					int bottom = top + fieldsize;
+					int left = (int) (x * fieldsize) + playgroundPos.left + 1;
+					int top = (int) (y * fieldsize) + playgroundPos.top + 1;
+					int right = left + (int) fieldsize;
+					int bottom = top + (int) fieldsize;
 					Rect rect = new Rect(left, top, right, bottom);
 					Bitmap image = BitmapManager.getBitmap(context.getResources(), resource);
 					canvas.drawBitmap(image, null, rect, null);
@@ -425,7 +425,7 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 	 */
 	private static Rect getShipRectangle(Ship ship, Rect playgroundPos)
 	{
-		double fieldsize = (playgroundPos.right - playgroundPos.left) / Playground.SIZE + 0.5;
+		double fieldsize = getFieldsize(playgroundPos);
 		int left, top, right, bottom;
 		if (ship instanceof PlaceableShip && !((PlaceableShip) ship).isOnPlayground())
 		{
@@ -650,5 +650,9 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 				}
 		}
 		return false;
+	}
+	
+	private static double getFieldsize(Rect playgroundPos) {
+		return (playgroundPos.right - playgroundPos.left) / Playground.SIZE + 0.5;
 	}
 }
