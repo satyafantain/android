@@ -94,6 +94,16 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 	 **/
 	private volatile PlaceableShip grabbedShip;
 
+	/**
+	 * Indicates whether the grabbed ship has been moved since it has been grabbed
+	 */
+	private volatile boolean grabbedShipMoved;
+	
+	/**
+	 * Indicates whether the grabbed ship was on the playground before grabbing
+	 */
+	private volatile boolean grabbedShipWasOnPlayground;
+	
 	@SuppressWarnings("javadoc")
 	public GameView(Context context)
 	{
@@ -128,7 +138,6 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 	 * @param ships
 	 *           the own ships
 	 */
-	@SuppressWarnings("hiding")
 	public void initialize(Playground ownPlayground, Playground opponentPlayground, List<Ship> ships)
 	{
 		this.ownPlayground = ownPlayground;
@@ -457,6 +466,7 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 	 */
 	private static void rearangePlaceableShip(PlaceableShip ship, int startX, int startY, Orientation orientation)
 	{
+		ship.setStartOrientation(orientation);
 		ship.setStartPos(startX, startY);
 		if (!ship.isOnPlayground())
 		{
@@ -587,10 +597,12 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 						Rect rect = new Rect(left, top, right, bottom);
 						if (rect.contains(x, y))
 						{
+							grabbedShipWasOnPlayground = pShip.isOnPlayground();
 							pShip.setOnPlayground(false);
 							grabbedShip = pShip;
 							grabX = x - left;
 							grabY = y - top;
+							grabbedShipMoved = false;
 							return true;
 						}
 					}
@@ -600,35 +612,59 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 				if (grabbedShip != null)
 				{
 					grabbedShip.setDrawPos(Math.round(event.getX() - grabX), Math.round(event.getY() - grabY));
+					grabbedShipMoved = true;
 					return true;
 				}
 				break;
 			case MotionEvent.ACTION_UP:
 				if (grabbedShip != null)
 				{
-					Rect snappingRect = new Rect(playgroundLarge.left - fieldsize / 2, playgroundLarge.top - fieldsize / 2, playgroundLarge.right, playgroundLarge.bottom);
-					if (snappingRect.contains(grabbedShip.getDrawX(), grabbedShip.getDrawY()))
+					if (!grabbedShipMoved && grabbedShipWasOnPlayground)
 					{
-						int xpos = Math.round(((float) grabbedShip.getDrawX() - playgroundLarge.left) / playgroundLarge.width() * Playground.SIZE);
-						int ypos = Math.round(((float) grabbedShip.getDrawY() - playgroundLarge.top) / playgroundLarge.height() * Playground.SIZE);
+						int grabOffsetX = (int) ((float) grabX / playgroundLarge.width() * Playground.SIZE);
+						int grabOffsetY = (int) ((float) grabY / playgroundLarge.height() * Playground.SIZE);
+						int xpos = grabbedShip.getX();
+						int ypos = grabbedShip.getY();
+						
+						// This will rotate the ship around the touched field
+						xpos += grabOffsetX - grabOffsetY;
+						ypos += grabOffsetY - grabOffsetX;
+						
+						Orientation oldOrientation = grabbedShip.getOrientation();
+						grabbedShip.setOrientation(oldOrientation == Orientation.HORIZONTAL ? Orientation.VERTICAL : Orientation.HORIZONTAL);
 						grabbedShip.setPos(xpos, ypos);
-						Rect rect = grabbedShip.getRect();
-						if (rect.left < 0 || rect.top < 0 || rect.right >= Playground.SIZE || rect.bottom >= Playground.SIZE)
-						{
-							grabbedShip.setDrawPos(grabbedShip.getStartX(), grabbedShip.getStartY());
-							grabbedShip.setOnPlayground(false);
-						}
-						else
-						{
-							Rect pos = getShipRectangle(new Ship(grabbedShip), playgroundLarge);
-							grabbedShip.setDrawPos(pos.left, pos.top);
-							grabbedShip.setOnPlayground(true);
-						}
+						Rect pos = getShipRectangle(grabbedShip, playgroundLarge);
+						grabbedShip.setDrawPos(pos.left, pos.top);
+						grabbedShip.setOnPlayground(true);
 					}
 					else
 					{
-						grabbedShip.setDrawPos(grabbedShip.getStartX(), grabbedShip.getStartY());
-						grabbedShip.setOnPlayground(false);
+						Rect snappingRect = new Rect(playgroundLarge.left - fieldsize / 2, playgroundLarge.top - fieldsize / 2, playgroundLarge.right, playgroundLarge.bottom);
+						if (snappingRect.contains(grabbedShip.getDrawX(), grabbedShip.getDrawY()))
+						{
+							int xpos = Math.round(((float) grabbedShip.getDrawX() - playgroundLarge.left) / playgroundLarge.width() * Playground.SIZE);
+							int ypos = Math.round(((float) grabbedShip.getDrawY() - playgroundLarge.top) / playgroundLarge.height() * Playground.SIZE);
+							grabbedShip.setPos(xpos, ypos);
+							Rect rect = grabbedShip.getRect();
+							if (rect.left < 0 || rect.top < 0 || rect.right >= Playground.SIZE || rect.bottom >= Playground.SIZE)
+							{
+								grabbedShip.setOrientation(grabbedShip.getStartOrientation());
+								grabbedShip.setDrawPos(grabbedShip.getStartX(), grabbedShip.getStartY());
+								grabbedShip.setOnPlayground(false);
+							}
+							else
+							{
+								Rect pos = getShipRectangle(new Ship(grabbedShip), playgroundLarge);
+								grabbedShip.setDrawPos(pos.left, pos.top);
+								grabbedShip.setOnPlayground(true);
+							}
+						}
+						else
+						{
+							grabbedShip.setOrientation(grabbedShip.getStartOrientation());
+							grabbedShip.setDrawPos(grabbedShip.getStartX(), grabbedShip.getStartY());
+							grabbedShip.setOnPlayground(false);
+						}
 					}
 					grabbedShip = null;
 					for (Ship ship : ownShips)
@@ -637,17 +673,18 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 						if (!pShip.isOnPlayground())
 						{
 							setAcceptButtonVisible(false);
-							return false;
+							return true;
 						}
 					}
 					if (getInvalidFields(ownShips).size() > 0)
 					{
 						setAcceptButtonVisible(false);
-						return false;
+						return true;
 					}
 					setAcceptButtonVisible(true);
-					return false;
+					return true;
 				}
+			break;
 		}
 		return false;
 	}

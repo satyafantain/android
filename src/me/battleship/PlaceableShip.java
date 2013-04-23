@@ -12,6 +12,9 @@ public class PlaceableShip extends Ship
 
 	/** The y position where the ship will be placed if its not on the playground **/
 	private int startY;
+	
+	/** The orientation which the ship has if its not on the playground */
+	private Orientation startOrientation;
 
 	/** The x position where the ship will be drawn **/
 	private int drawX;
@@ -69,6 +72,27 @@ public class PlaceableShip extends Ship
 	public int getStartY()
 	{
 		return startY;
+	}
+
+	/**
+	 * Sets the orientation the ship has if its not on the playground
+	 * 
+	 * @param orientation
+	 *           the orientation
+	 */
+	public void setStartOrientation(Orientation orientation)
+	{
+		startOrientation = orientation;
+	}
+
+	/**
+	 * Returns the orientation the ship has if its not on the playground
+	 * 
+	 * @return the orientation
+	 */
+	public Orientation getStartOrientation()
+	{
+		return startOrientation;
 	}
 
 	/**
