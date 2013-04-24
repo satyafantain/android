@@ -570,7 +570,7 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 	@Override
 	public boolean onTouch(View v, MotionEvent event)
 	{
-		int fieldsize = Math.round(playgroundLarge.width() / Playground.SIZE);
+		double fieldsize = getFieldsize(playgroundLarge);
 		switch (event.getAction())
 		{
 			case MotionEvent.ACTION_DOWN:
@@ -586,13 +586,13 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 						int right, bottom;
 						if (ship.getOrientation() == Orientation.HORIZONTAL)
 						{
-							right = left + ship.getSize() * fieldsize;
-							bottom = top + fieldsize;
+							right = left + (int) (ship.getSize() * fieldsize);
+							bottom = top + (int) fieldsize;
 						}
 						else
 						{
-							right = left + fieldsize;
-							bottom = top + ship.getSize() * fieldsize;
+							right = left + (int) fieldsize;
+							bottom = top + (int) (ship.getSize() * fieldsize);
 						}
 						Rect rect = new Rect(left, top, right, bottom);
 						if (rect.contains(x, y))
@@ -633,13 +633,13 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 						Orientation oldOrientation = grabbedShip.getOrientation();
 						grabbedShip.setOrientation(oldOrientation == Orientation.HORIZONTAL ? Orientation.VERTICAL : Orientation.HORIZONTAL);
 						grabbedShip.setPos(xpos, ypos);
+						grabbedShip.setOnPlayground(true);
 						Rect pos = getShipRectangle(grabbedShip, playgroundLarge);
 						grabbedShip.setDrawPos(pos.left, pos.top);
-						grabbedShip.setOnPlayground(true);
 					}
 					else
 					{
-						Rect snappingRect = new Rect(playgroundLarge.left - fieldsize / 2, playgroundLarge.top - fieldsize / 2, playgroundLarge.right, playgroundLarge.bottom);
+						Rect snappingRect = new Rect(playgroundLarge.left - (int) fieldsize / 2, playgroundLarge.top - (int) fieldsize / 2, playgroundLarge.right, playgroundLarge.bottom);
 						if (snappingRect.contains(grabbedShip.getDrawX(), grabbedShip.getDrawY()))
 						{
 							int xpos = Math.round(((float) grabbedShip.getDrawX() - playgroundLarge.left) / playgroundLarge.width() * Playground.SIZE);
