@@ -632,6 +632,27 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 						
 						Orientation oldOrientation = grabbedShip.getOrientation();
 						grabbedShip.setOrientation(oldOrientation == Orientation.HORIZONTAL ? Orientation.VERTICAL : Orientation.HORIZONTAL);
+
+						if (xpos < 0)
+							xpos = 0;
+						else if (grabbedShip.getOrientation() == Orientation.HORIZONTAL)
+						{
+							if (xpos + grabbedShip.getSize() - 1 > Playground.SIZE)
+								xpos = Playground.SIZE - grabbedShip.getSize();
+						}
+						else if (xpos > Playground.SIZE - 1)
+							xpos = Playground.SIZE - 1;
+
+						if (ypos < 0)
+							ypos = 0;
+						else if (grabbedShip.getOrientation() == Orientation.VERTICAL)
+						{
+							if (ypos + grabbedShip.getSize() - 1 > Playground.SIZE)
+								ypos = Playground.SIZE - grabbedShip.getSize();
+						}
+						else if (ypos > Playground.SIZE - 1)
+							ypos = Playground.SIZE - 1;
+
 						grabbedShip.setPos(xpos, ypos);
 						grabbedShip.setOnPlayground(true);
 						Rect pos = getShipRectangle(grabbedShip, playgroundLarge);
