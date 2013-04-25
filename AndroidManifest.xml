@@ -23,8 +23,13 @@
         </activity>
         <activity android:name=".activities.MatchSelectionActivity" />
 
-        <activity android:name=".activities.GameActivity"></activity><service
+        <activity android:name=".activities.GameActivity"></activity>
+        <service
             android:name=".services.XMPPConnectionService"
+            android:exported="false" >
+        </service>
+        <service
+            android:name=".services.GameService"
             android:exported="false" >
         </service>
         

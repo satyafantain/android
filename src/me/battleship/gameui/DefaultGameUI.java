@@ -1,9 +1,9 @@
-package me.battleship.view;
+package me.battleship.gameui;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -14,6 +14,7 @@ import me.battleship.PlaygroundField;
 import me.battleship.R;
 import me.battleship.Ship;
 import me.battleship.manager.BitmapManager;
+import me.battleship.services.interfaces.GameServiceConnectedListener;
 import me.battleship.ui.Button;
 import me.battleship.utils.RectUtils;
 import android.content.Context;
@@ -22,7 +23,6 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
-import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -35,46 +35,43 @@ import android.view.View.OnTouchListener;
  * 
  * @author Manuel Vögele
  */
-public class GameView extends SurfaceView implements Runnable, OnTouchListener, SurfaceHolder.Callback
+public class DefaultGameUI extends GameUI implements Runnable, OnTouchListener, SurfaceHolder.Callback
 {
-	/** The log tag **/
-	public final static String LOG_TAG = GameView.class.getSimpleName();
+	/** Indicates how many px are needed for 1 dp */
+	private float dp;
 
-	/** Indicates how many px are needed for 1 dp **/
-	private final float dp = getContext().getResources().getDisplayMetrics().density;
+	/** Indicates whether the thread can draw on the surface or not */
+	private boolean canDraw = false;
 
-	/** Indicates whether the thread can draw on the surface or not **/
-	private volatile boolean canDraw = false;
+	/** The screen to draw in */
+	private Rect screen;
 
-	/** Indicates whether the view was initialized - it may not be drawn before */
-	private volatile boolean initialized = false;
+	/** The pos for the large playground */
+	private Rect playgroundLarge;
 
-	/** The screen to draw in **/
-	private volatile Rect screen;
+	/** The pos for the small playground */
+	private Rect playgroundSmall;
 
-	/** The pos for the large playground **/
-	private volatile Rect playgroundLarge;
+	/** The black area in the bottom of the screen */
+	private Rect bottomArea;
 
-	/** The pos for the small playground **/
-	private volatile Rect playgroundSmall;
+	/** The own playground */
+	private Playground ownPlayground;
 
-	/** The black area in the bottom of the screen **/
-	private volatile Rect bottomArea;
+	/** The opponents playground */
+	private Playground opponentPlayground;
 
-	/** The own playground **/
-	private volatile Playground ownPlayground;
+	/** The own ships */
+	private List<Ship> ownShips;
 
-	/** The opponents playground **/
-	private volatile Playground opponentPlayground;
-
-	/** The own ships **/
-	private volatile List<Ship> ownShips;
-
-	/** The ships of the opponent **/
-	private volatile List<Ship> opponentShips;
+	/** The ships of the opponent */
+	private List<Ship> opponentShips;
 
 	/** The accept button */
-	private volatile Button acceptButton;
+	private Button acceptButton;
+
+	/** The view to render the surface to */
+	private SurfaceView surfaceView;
 
 	/**
 	 * The x position on which the ship was grabbed relative to the ships x
@@ -104,48 +101,61 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 	 */
 	private volatile boolean grabbedShipWasOnPlayground;
 	
-	@SuppressWarnings("javadoc")
-	public GameView(Context context)
-	{
-		super(context);
-		getHolder().addCallback(this);
-		setOnTouchListener(this);
-	}
-
-	@SuppressWarnings("javadoc")
-	public GameView(Context context, AttributeSet attrs)
-	{
-		super(context, attrs);
-		getHolder().addCallback(this);
-		setOnTouchListener(this);
-	}
-
-	@SuppressWarnings("javadoc")
-	public GameView(Context context, AttributeSet attrs, int defStyle)
-	{
-		super(context, attrs, defStyle);
-		getHolder().addCallback(this);
-		setOnTouchListener(this);
-	}
-
 	/**
-	 * Initializes the {@link GameView}
-	 * 
-	 * @param ownPlayground
-	 *           the own playground
-	 * @param opponentPlayground
-	 *           the opponents playground
-	 * @param ships
-	 *           the own ships
+	 * The Thread responsible for drawing
 	 */
-	public void initialize(Playground ownPlayground, Playground opponentPlayground, List<Ship> ships)
+	private Thread drawThread;
+
+	@SuppressWarnings("javadoc")
+	public DefaultGameUI(Context context, GameServiceConnectedListener listener)
 	{
-		this.ownPlayground = ownPlayground;
-		this.opponentPlayground = opponentPlayground;
-		ownShips = ships;
-		// TODO Make real assignment
-		opponentShips = new LinkedList<Ship>();
-		initialized = true;
+		super(context, listener);
+		dp = context.getResources().getDisplayMetrics().density;
+		surfaceView = new SurfaceView(getContext());
+		surfaceView.getHolder().addCallback(this);
+	}
+
+	@Override
+	public void onStart()
+	{
+		drawThread = new Thread(this);
+		if (gameService != null)
+			drawThread.start();
+	}
+
+	@Override
+	public void onStop()
+	{
+		drawThread.interrupt();
+		drawThread = null;
+	}
+
+	@Override
+	public View getView()
+	{
+		return surfaceView;
+	}
+
+	@Override
+	public void onGameServiceConnected()
+	{
+		ownShips = gameService.getOwnShips();
+		if (gameService.isInPlacementPhase())
+		{
+			List<Ship> tmpShips = new ArrayList<Ship>(ownShips.size());
+			for (Ship ship : ownShips)
+			{
+				tmpShips.add(new PlaceableShip(ship));
+			}
+			ownShips.clear();
+			ownShips.addAll(tmpShips);
+		}
+		opponentShips = gameService.getOpponentShips();
+		ownPlayground = gameService.getOwnPlayground();
+		opponentPlayground = gameService.getOpponentPlayground();
+		surfaceView.setOnTouchListener(this);
+		if (drawThread != null && !drawThread.isAlive())
+			drawThread.start();
 	}
 
 	@Override
@@ -189,15 +199,11 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 	 */
 	public synchronized void draw() throws IllegalStateException
 	{
-		if (!initialized)
-		{
-			throw new IllegalStateException("The view is not initialized");
-		}
 		if (!canDraw)
 		{
 			return;
 		}
-		SurfaceHolder holder = getHolder();
+		SurfaceHolder holder = surfaceView.getHolder();
 		Canvas canvas = holder.lockCanvas(screen);
 		Bitmap water = BitmapManager.getBitmap(getContext().getResources(), R.drawable.background);
 		for (int y = 0;y < screen.height();y += water.getHeight())
@@ -324,7 +330,6 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 	private static void drawFieldMarks(Canvas canvas, Rect playgroundPos, Playground playground, Collection<Ship> ships, Context context)
 	{
 		double fieldsize = getFieldsize(playgroundPos);
-
 		Set<Point> invalidFields = getInvalidFields(ships);
 		for (Point point : invalidFields)
 		{
@@ -521,9 +526,7 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 		playgroundLarge = new Rect(border, size + border, border + largeFieldSize, size + border + largeFieldSize);
 		bottomArea = new Rect(0, playgroundLarge.bottom + border, width, height);
 
-		Iterator<Ship> iterator = ownShips.iterator();
-		Ship ship = iterator.next();
-		if (ship instanceof PlaceableShip)
+		if (gameService.isInPlacementPhase())
 		{
 			int halfFieldsize = Math.round(fieldsize / 2);
 			int oneAndAHalfFieldsize = Math.round(fieldsize * 1.5f);
@@ -531,6 +534,8 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 			int aircraftCarrierLeft = bottomArea.left + halfFieldsize;
 			int aircraftCarrierRight = aircraftCarrierLeft + Math.round(5 * fieldsize);
 			int submarineLeft = bottomArea.right - threeAndAHalfFieldsize;
+			Iterator<Ship> iterator = ownShips.iterator();
+			Ship ship = iterator.next();
 			rearangePlaceableShip((PlaceableShip) ship, aircraftCarrierLeft, bottomArea.top + halfFieldsize, Orientation.HORIZONTAL);
 			ship = iterator.next();
 			rearangePlaceableShip((PlaceableShip) ship, bottomArea.left + Math.round(fieldsize), bottomArea.bottom - oneAndAHalfFieldsize, Orientation.HORIZONTAL);
@@ -710,7 +715,15 @@ public class GameView extends SurfaceView implements Runnable, OnTouchListener, 
 		return false;
 	}
 	
-	private static double getFieldsize(Rect playgroundPos) {
-		return (playgroundPos.right - playgroundPos.left) / Playground.SIZE + 0.5;
+	/**
+	 * Calculates the field size for the specified playground
+	 * 
+	 * @param playground
+	 *           the playground
+	 * @return the field size
+	 */
+	private static double getFieldsize(Rect playground)
+	{
+		return (playground.right - playground.left) / Playground.SIZE + 0.5;
 	}
 }

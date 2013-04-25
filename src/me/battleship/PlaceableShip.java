@@ -31,10 +31,10 @@ public class PlaceableShip extends Ship
 	 * @param type
 	 *           the type of the ship
 	 */
-	public PlaceableShip(ShipType type)
+	public PlaceableShip(Ship ship)
 	{
-		super(type, 0, 0, null);
-		onPlayground = false;
+		super(ship);
+		onPlayground = ship.getOrientation() != null;
 	}
 
 	/**
