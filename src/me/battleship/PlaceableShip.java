@@ -138,6 +138,11 @@ public class PlaceableShip extends Ship
 	public void setOnPlayground(boolean onPlayground)
 	{
 		this.onPlayground = onPlayground;
+		if (!onPlayground)
+		{
+			setOrientation(null);
+			setPos(-1, -1);
+		}
 	}
 
 	/**
