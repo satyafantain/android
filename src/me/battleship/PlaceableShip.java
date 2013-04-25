@@ -26,10 +26,10 @@ public class PlaceableShip extends Ship
 	private boolean onPlayground;
 
 	/**
-	 * Initializes a new {@link PlaceableShip}
+	 * Initializes a new {@link PlaceableShip} using an existing ship
 	 * 
-	 * @param type
-	 *           the type of the ship
+	 * @param ship
+	 *           the ship to use as base
 	 */
 	public PlaceableShip(Ship ship)
 	{
