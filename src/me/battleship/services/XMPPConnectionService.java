@@ -1,11 +1,17 @@
 package me.battleship.services;
 
+import me.battleship.services.interfaces.OpponentConnection;
+import me.battleship.services.interfaces.OpponentMessageListener;
 import me.battleship.services.interfaces.XMPPConnection;
 import me.battleship.xmpp.AlreadyConnectedException;
 import me.battleship.xmpp.JID;
 
+import org.jivesoftware.smack.Chat;
+import org.jivesoftware.smack.ChatManager;
 import org.jivesoftware.smack.ConnectionConfiguration;
+import org.jivesoftware.smack.MessageListener;
 import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smack.packet.Presence.Mode;
 import org.jivesoftware.smack.packet.Presence.Type;
@@ -107,6 +113,14 @@ public class XMPPConnectionService extends Service
 		}
 
 		@Override
+		public OpponentConnection getOpponentConnection(String opponentJID, OpponentMessageListener listener)
+		{
+			ChatManager chatManager = connection.getChatManager();
+			Chat chat = chatManager.createChat(opponentJID, null);
+			return new OpponentConnectionImpl(chat, listener);
+		}
+
+		@Override
 		public void disconnect()
 		{
 			final org.jivesoftware.smack.XMPPConnection con = connection;
@@ -121,6 +135,39 @@ public class XMPPConnectionService extends Service
 					}
 				}.start();
 				connection = null;
+			}
+		}
+
+		/**
+		 * The implementation of the {@link OpponentConnection} interface
+		 * 
+		 * @author Manuel Vögele
+		 */
+		private class OpponentConnectionImpl implements OpponentConnection, MessageListener
+		{
+			/** The chat */
+			private Chat chat;
+
+			/** The listener for messages from the opponent */
+			private OpponentMessageListener listener;
+
+			public OpponentConnectionImpl(Chat chat, OpponentMessageListener listener)
+			{
+				this.chat = chat;
+				this.listener = listener;
+				chat.addMessageListener(this);
+			}
+
+			@Override
+			public void sendDiceRoll(int dice)
+			{
+				// TODO Auto-generated method stub
+			}
+
+			@Override
+			public void processMessage(Chat arg0, Message arg1)
+			{
+				// TODO Auto-generated method stub
 			}
 		}
 	}

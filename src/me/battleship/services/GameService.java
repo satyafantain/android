@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 import me.battleship.Orientation;
@@ -12,21 +13,30 @@ import me.battleship.Playground;
 import me.battleship.Ship;
 import me.battleship.ShipType;
 import me.battleship.services.interfaces.GameServiceConnection;
+import me.battleship.services.interfaces.OpponentConnection;
+import me.battleship.services.interfaces.OpponentMessageListener;
+import me.battleship.services.interfaces.XMPPConnection;
 import me.battleship.utils.RectUtils;
 import android.app.Service;
+import android.content.ComponentName;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.os.Binder;
 import android.os.IBinder;
+import android.util.Log;
 
 /**
  * The service taking care of the game logic
  * 
  * @author Manuel Vögele
  */
-public class GameService extends Service
+public class GameService extends Service implements ServiceConnection, OpponentMessageListener
 {
+	/** The log tag */
+	public static final String LOG_TAG = GameService.class.getSimpleName();
+
 	/** Indicates whether the service is running */
 	private static boolean isRunning = false;
 
@@ -42,11 +52,26 @@ public class GameService extends Service
 	/** The enemies playground */
 	Playground opponentPlayground;
 
+	/** The xmpp connection */
+	XMPPConnection xmppConnection;
+
+	/** The connection to the opponent */
+	OpponentConnection connection;
+
+	/** The opponents JID */
+	String opponentJID;
+
+	/** Indicates whether the game is in the placement phase */
+	boolean placementPhase;
+
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId)
 	{
 		if (isRunning)
 			return START_NOT_STICKY;
+		opponentJID = intent.getStringExtra("opponentJID");
+		Intent intent2 = new Intent(this, XMPPConnectionService.class);
+		bindService(intent2, this, BIND_AUTO_CREATE);
 		ownShips = new ArrayList<Ship>(
 		          Arrays.asList(new Ship(ShipType.AIRCRAFT_CARRIER, -1, -1, null),
 		                        new Ship(ShipType.BATTLESHIP, -1, -1, null),
@@ -56,6 +81,7 @@ public class GameService extends Service
 		opponentShips = new ArrayList<Ship>(ownShips.size());
 		ownPlayground = new Playground();
 		opponentPlayground = new Playground();
+		placementPhase = true;
 		isRunning = true;
 		return START_NOT_STICKY;
 	}
@@ -83,6 +109,31 @@ public class GameService extends Service
 	public static boolean isRunning()
 	{
 		return isRunning;
+	}
+
+	@Override
+	public void onServiceConnected(ComponentName name, IBinder service)
+	{
+		xmppConnection = (XMPPConnection) service;
+		connection = xmppConnection.getOpponentConnection(opponentJID, this);
+		Log.i(LOG_TAG, "The XMPPConnectionService connected");
+	}
+
+	@Override
+	public void onServiceDisconnected(ComponentName name)
+	{
+		xmppConnection = null;
+		Log.i(LOG_TAG, "The XMPPConnectionService disconnected");
+	}
+
+	/**
+	 * Roll the dice and perform actions if the opponents dice was already
+	 * received
+	 */
+	public void rollDice()
+	{
+		connection.sendDiceRoll(new Random().nextInt(6) + 1);
+		// TODO Compare dice values
 	}
 
 	/**
@@ -181,26 +232,33 @@ public class GameService extends Service
 		{
 			if (!areAllShipsPlaced(ownShips) || !getInvalidFields(ownShips).isEmpty())
 				return false;
-			for (Ship ship : ownShips)
+			new Thread(new Runnable()
 			{
-				Rect rect = ship.getRect();
-				for (int y = rect.top;y <= rect.bottom;y++)
+				@Override
+				public void run()
 				{
-					for (int x = rect.left;x <= rect.right;x++)
+					placementPhase = false;
+					for (Ship ship : ownShips)
 					{
-						ownPlayground.getField(x, y).setShip(ship);
+						Rect rect = ship.getRect();
+						for (int y = rect.top;y <= rect.bottom;y++)
+						{
+							for (int x = rect.left;x <= rect.right;x++)
+							{
+								ownPlayground.getField(x, y).setShip(ship);
+							}
+						}
 					}
+					rollDice();
 				}
-			}
-			// TODO Send a message to the opponent
+			}).start();
 			return true;
 		}
 
 		@Override
 		public boolean isInPlacementPhase()
 		{
-			// TODO Auto-generated method stub
-			return true;
+			return placementPhase;
 		}
 	}
 }

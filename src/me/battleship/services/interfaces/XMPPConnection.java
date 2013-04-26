@@ -34,6 +34,17 @@ public interface XMPPConnection
 	public boolean isConnected();
 
 	/**
+	 * Returns the opponent connection for the specified JID
+	 * 
+	 * @param opponentJID
+	 *           the JID of the opponent
+	 * @param listener
+	 *           a listener for messages from the opponent
+	 * @return the connection to the opponent
+	 */
+	public OpponentConnection getOpponentConnection(String opponentJID, OpponentMessageListener listener);
+
+	/**
 	 * Disconnects from the XMPP server
 	 */
 	public void disconnect();
