@@ -44,6 +44,15 @@ public interface GameServiceConnection
 	public Playground getOpponentPlayground();
 
 	/**
+	 * Returns whether all ships are placed on the playground
+	 * 
+	 * @param ships
+	 *           the ships
+	 * @return <code>true</code> is all ships are placed on the playground
+	 */
+	public boolean areAllShipsPlaced(Collection<Ship> ships);
+
+	/**
 	 * Returns the fields on which the specified ships overlap
 	 * 
 	 * @param ships

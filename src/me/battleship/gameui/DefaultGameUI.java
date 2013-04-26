@@ -651,14 +651,10 @@ public class DefaultGameUI extends GameUI implements Runnable, OnTouchListener, 
 						}
 					}
 					grabbedShip = null;
-					for (Ship ship : ownShips)
+					if (!gameService.areAllShipsPlaced(ownShips))
 					{
-						PlaceableShip pShip = (PlaceableShip) ship;
-						if (!pShip.isOnPlayground())
-						{
-							setAcceptButtonVisible(false);
-							return true;
-						}
+						setAcceptButtonVisible(false);
+						return true;
 					}
 					if (gameService.getInvalidFields(ownShips).size() > 0)
 					{

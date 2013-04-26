@@ -126,6 +126,20 @@ public class GameService extends Service
 		}
 		
 		@Override
+		public boolean areAllShipsPlaced(Collection<Ship> ships)
+		{
+			for (Ship ship : ships)
+			{
+				Rect rect = ship.getRect();
+				if (rect.left < 0 || rect.top < 0 || rect.right >= Playground.SIZE || rect.bottom >= Playground.SIZE)
+				{
+					return false;
+				}
+			}
+			return true;
+		}
+
+		@Override
 		public Set<Point> getInvalidFields(Collection<Ship> ships)
 		{
 			Set<Point> fields = new HashSet<Point>();
