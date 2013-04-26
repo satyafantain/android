@@ -77,6 +77,11 @@ public class LoginActivity extends Activity implements OnClickListener, ServiceC
 	{
 		Log.i(LOG_TAG, "XMPPConnectionService connected");
 		connection = (XMPPConnection) service;
+		if (connection.isConnected())
+		{
+			Intent intent = new Intent(this, MatchSelectionActivity.class);
+			startActivity(intent);
+		}
 	}
 
 	@Override
