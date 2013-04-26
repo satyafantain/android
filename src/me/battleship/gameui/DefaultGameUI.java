@@ -297,7 +297,7 @@ public class DefaultGameUI extends GameUI implements Runnable, OnTouchListener, 
 	{
 		Bitmap image = BitmapManager.getBitmap(context.getResources(), ship.getDrawable());
 		double fieldsize = getFieldsize(playgroundPos);
-		Rect pos = getShipRectangle(ship, playgroundPos);
+		Rect pos = getShipDrawRectangle(ship, playgroundPos);
 		if (ship.getOrientation() == Orientation.VERTICAL)
 		{
 			canvas.drawBitmap(image, null, pos, null);
@@ -372,6 +372,7 @@ public class DefaultGameUI extends GameUI implements Runnable, OnTouchListener, 
 	 */
 	private static Set<Point> getInvalidFields(Collection<Ship> ships)
 	{
+		// TODO Move to GameService
 		Set<Point> fields = new HashSet<Point>();
 		for (Ship ship : ships)
 		{
@@ -437,7 +438,7 @@ public class DefaultGameUI extends GameUI implements Runnable, OnTouchListener, 
 	 *           the position of the playground the ship is on
 	 * @return the rectangle
 	 */
-	private static Rect getShipRectangle(Ship ship, Rect playgroundPos)
+	private static Rect getShipDrawRectangle(Ship ship, Rect playgroundPos)
 	{
 		double fieldsize = getFieldsize(playgroundPos);
 		int left, top, right, bottom;
@@ -466,16 +467,21 @@ public class DefaultGameUI extends GameUI implements Runnable, OnTouchListener, 
 	 *           the x position where the ship should start
 	 * @param startY
 	 *           the y position where the ship should start
-	 * @param orientation
+	 * @param startOrientation
 	 *           the orientation
 	 */
-	private static void rearangePlaceableShip(PlaceableShip ship, int startX, int startY, Orientation orientation)
+	private void rearangePlaceableShip(PlaceableShip ship, int startX, int startY, Orientation startOrientation)
 	{
-		ship.setStartOrientation(orientation);
+		ship.setStartOrientation(startOrientation);
 		ship.setStartPos(startX, startY);
-		if (!ship.isOnPlayground())
+		if (ship.isOnPlayground())
 		{
-			ship.setOrientation(orientation);
+			Rect rect = getShipDrawRectangle(ship, playgroundLarge);
+			ship.setDrawPos(rect.left, rect.top);
+		}
+		else
+		{
+			ship.setOrientation(startOrientation);
 			ship.setDrawPos(startX, startY);
 		}
 	}
@@ -660,7 +666,7 @@ public class DefaultGameUI extends GameUI implements Runnable, OnTouchListener, 
 
 						grabbedShip.setPos(xpos, ypos);
 						grabbedShip.setOnPlayground(true);
-						Rect pos = getShipRectangle(grabbedShip, playgroundLarge);
+						Rect pos = getShipDrawRectangle(grabbedShip, playgroundLarge);
 						grabbedShip.setDrawPos(pos.left, pos.top);
 					}
 					else
@@ -680,7 +686,7 @@ public class DefaultGameUI extends GameUI implements Runnable, OnTouchListener, 
 							}
 							else
 							{
-								Rect pos = getShipRectangle(new Ship(grabbedShip), playgroundLarge);
+								Rect pos = getShipDrawRectangle(new Ship(grabbedShip), playgroundLarge);
 								grabbedShip.setDrawPos(pos.left, pos.top);
 								grabbedShip.setOnPlayground(true);
 							}
