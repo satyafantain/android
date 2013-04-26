@@ -38,6 +38,8 @@ public class GameService extends Service
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId)
 	{
+		if (isRunning)
+			return START_NOT_STICKY;
 		ownShips = new ArrayList<Ship>(
 		          Arrays.asList(new Ship(ShipType.AIRCRAFT_CARRIER, -1, -1, null),
 		                        new Ship(ShipType.BATTLESHIP, -1, -1, null),
