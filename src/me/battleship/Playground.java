@@ -46,41 +46,6 @@ public class Playground
 	}
 
 	/**
-	 * Validates if a ship with the specified orientation can be placed on field
-	 * orientation
-	 * 
-	 * @param x
-	 *           the x position
-	 * @param y
-	 *           the y position
-	 * @param orientation
-	 *           the orientation of the ship
-	 * @param type
-	 *           the type of the ship
-	 * @return if the position is valid
-	 */
-	public boolean validateShipPos(int x, int y, Orientation orientation, ShipType type)
-	{
-		if (x < 0)
-			return false;
-		if (y < 0)
-			return false;
-		int size = Ship.getSizeForType(type);
-		if (orientation == Orientation.HORIZONTAL && x + size - 1 >= SIZE)
-			return false;
-		if (orientation == Orientation.VERTICAL && y + size - 1 >= SIZE)
-			return false;
-		for (int i = 0;i < size;i++)
-		{
-			if (orientation == Orientation.HORIZONTAL && fields[x + i][y].getShip() != null)
-				return false;
-			if (orientation == Orientation.VERTICAL && fields[x][y + i].getShip() != null)
-				return false;
-		}
-		return true;
-	}
-
-	/**
 	 * Returns whether the specified coordinate is on the field or not
 	 * 
 	 * @param x
