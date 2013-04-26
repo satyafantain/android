@@ -539,6 +539,16 @@ public class DefaultGameUI extends GameUI implements Runnable, OnTouchListener, 
 			case MotionEvent.ACTION_DOWN:
 				int x = Math.round(event.getX());
 				int y = Math.round(event.getY());
+				if (acceptButton != null && acceptButton.getLocation().contains(x, y))
+				{
+					if (!gameService.confirmShips())
+					{
+						Log.e(LOG_TAG, "The confirm button was displayed but the ship placemet is not valid");
+						return true;
+					}
+					// TODO Do what's to do after confirming the ships
+					return true;
+				}
 				for (Ship ship : ownShips)
 				{
 					if (ship instanceof PlaceableShip)
