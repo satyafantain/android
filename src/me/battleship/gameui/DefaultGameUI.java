@@ -448,7 +448,7 @@ public class DefaultGameUI extends GameUI implements Runnable, OnTouchListener, 
 	{
 		if (visible)
 		{
-			float fieldsize = playgroundLarge.width() / Playground.SIZE;
+			float fieldsize = (float) getFieldsize(playgroundLarge);
 			float halfFieldsize = fieldsize / 2;
 			float doubleFieldsize = fieldsize * 2;
 			int right = Math.round(bottomArea.right - halfFieldsize);
@@ -463,6 +463,24 @@ public class DefaultGameUI extends GameUI implements Runnable, OnTouchListener, 
 		}
 	}
 	
+	/**
+	 * Sets the accept button to the correct visibility state
+	 */
+	private void setAcceptButtonVisibility()
+	{
+		if (!gameService.areAllShipsPlaced(ownShips))
+		{
+			setAcceptButtonVisible(false);
+			return;
+		}
+		if (gameService.getInvalidFields(ownShips).size() > 0)
+		{
+			setAcceptButtonVisible(false);
+			return;
+		}
+		setAcceptButtonVisible(true);
+	}
+
 	@Override
 	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)
 	{
@@ -503,6 +521,7 @@ public class DefaultGameUI extends GameUI implements Runnable, OnTouchListener, 
 			rearangePlaceableShip((PlaceableShip) ship, submarineLeft, bottomArea.bottom - oneAndAHalfFieldsize, Orientation.HORIZONTAL);
 			ship = iterator.next();
 			rearangePlaceableShip((PlaceableShip) ship, Math.round(aircraftCarrierRight + (submarineLeft - aircraftCarrierRight) / 2 - fieldsize / 2), bottomArea.top + bottomArea.height() / 2 - Math.round(fieldsize), Orientation.VERTICAL);
+			setAcceptButtonVisibility();
 		}
 	}
 
@@ -661,17 +680,7 @@ public class DefaultGameUI extends GameUI implements Runnable, OnTouchListener, 
 						}
 					}
 					grabbedShip = null;
-					if (!gameService.areAllShipsPlaced(ownShips))
-					{
-						setAcceptButtonVisible(false);
-						return true;
-					}
-					if (gameService.getInvalidFields(ownShips).size() > 0)
-					{
-						setAcceptButtonVisible(false);
-						return true;
-					}
-					setAcceptButtonVisible(true);
+					setAcceptButtonVisibility();
 					return true;
 				}
 			break;
