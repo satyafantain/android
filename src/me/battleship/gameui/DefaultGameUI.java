@@ -19,6 +19,8 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Paint.Align;
+import android.graphics.Paint.Style;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.util.Log;
@@ -90,19 +92,19 @@ public class DefaultGameUI extends GameUI implements Runnable, OnTouchListener, 
 	private volatile PlaceableShip grabbedShip;
 
 	/**
-	 * Indicates whether the grabbed ship has been moved since it has been grabbed
+	 * Indicates whether the grabbed ship has been moved since it has been
+	 * grabbed
 	 */
 	private volatile boolean grabbedShipMoved;
 	
-	/**
-	 * Indicates whether the grabbed ship was on the playground before grabbing
-	 */
+	/** Indicates whether the grabbed ship was on the playground before grabbing */
 	private volatile boolean grabbedShipWasOnPlayground;
 	
-	/**
-	 * The Thread responsible for drawing
-	 */
+	/** The Thread responsible for drawing */
 	private Thread drawThread;
+	
+	/** The text displayed on the bottom */
+	private String bottomText;
 
 	@SuppressWarnings("javadoc")
 	public DefaultGameUI(Context context, GameServiceConnectedListener listener)
@@ -217,6 +219,7 @@ public class DefaultGameUI extends GameUI implements Runnable, OnTouchListener, 
 		drawButton(canvas, acceptButton, getContext());
 		drawPlayground(canvas, opponentPlayground, playgroundSmall, opponentShips, getContext());
 		drawPlayground(canvas, ownPlayground, playgroundLarge, ownShips, getContext());
+		drawTexts(canvas);
 		holder.unlockCanvasAndPost(canvas);
 	}
 
@@ -362,6 +365,27 @@ public class DefaultGameUI extends GameUI implements Runnable, OnTouchListener, 
 	}
 
 	/**
+	 * Draws the texts
+	 * 
+	 * @param canvas
+	 *           the canvas to draw to
+	 */
+	private void drawTexts(Canvas canvas)
+	{
+		if (bottomText != null)
+		{
+			double fieldsize = getFieldsize(playgroundLarge);
+			Paint paint = new Paint();
+			paint.setARGB(255, 255, 255, 255);
+			paint.setTextAlign(Align.LEFT);
+			paint.setTextSize((float) fieldsize * 2 / 3);
+			paint.setStyle(Style.FILL);
+			paint.setAntiAlias(true);
+			canvas.drawText(bottomText, bottomArea.left + (float) fieldsize / 2, bottomArea.top + (float) fieldsize * 13 / 6, paint);
+		}
+	}
+
+	/**
 	 * Draws a button. Does nothing if <code>null</code> is passed
 	 * 
 	 * @param canvas
@@ -468,6 +492,11 @@ public class DefaultGameUI extends GameUI implements Runnable, OnTouchListener, 
 	 */
 	private void setAcceptButtonVisibility()
 	{
+		if (!gameService.isInPlacementPhase())
+		{
+			setAcceptButtonVisible(false);
+			return;
+		}
 		if (!gameService.areAllShipsPlaced(ownShips))
 		{
 			setAcceptButtonVisible(false);
@@ -565,7 +594,8 @@ public class DefaultGameUI extends GameUI implements Runnable, OnTouchListener, 
 						Log.e(LOG_TAG, "The confirm button was displayed but the ship placemet is not valid");
 						return true;
 					}
-					// TODO Do what's to do after confirming the ships
+					setAcceptButtonVisible(false);
+					bottomText = getContext().getResources().getText(R.string.waiting_for_opponent).toString();
 					return true;
 				}
 				for (Ship ship : ownShips)

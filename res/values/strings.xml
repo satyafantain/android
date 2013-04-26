@@ -25,6 +25,8 @@
     <string name="direct_connection">Direct connection</string>
     <string name="direct_connect">Connect to partner</string>
     
+    <string name="waiting_for_opponent">Waiting for opponent…</string>
+    
     <string name="really_logout">Do you really want to log out?</string>
     
 </resources>
