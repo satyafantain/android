@@ -1,6 +1,7 @@
 package me.battleship.activities;
 
 import me.battleship.R;
+import me.battleship.services.GameService;
 import me.battleship.services.XMPPConnectionService;
 import me.battleship.services.interfaces.XMPPConnection;
 import android.app.Activity;
@@ -40,6 +41,11 @@ public class MatchSelectionActivity extends Activity implements OnClickListener,
 		// TODO OnClick for direct connect
 		Intent intent = new Intent(this, XMPPConnectionService.class);
 		bindService(intent, this, BIND_AUTO_CREATE);
+		if (GameService.isRunning())
+		{
+			intent = new Intent(this, GameActivity.class);
+			startActivity(intent);
+		}
 	}
 	
 	@Override

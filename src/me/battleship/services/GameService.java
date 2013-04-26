@@ -21,7 +21,7 @@ import android.os.IBinder;
 public class GameService extends Service
 {
 	/** Indicates whether the service is running */
-	private boolean isRunning = false;
+	private static boolean isRunning = false;
 
 	/** A set containing the own ships */
 	List<Ship> ownShips;
@@ -66,6 +66,16 @@ public class GameService extends Service
 	{
 		super.onDestroy();
 		isRunning = false;
+	}
+
+	/**
+	 * Returns whether this service is running
+	 * 
+	 * @return <code>true</code> if the servic is running
+	 */
+	public static boolean isRunning()
+	{
+		return isRunning;
 	}
 
 	/**
