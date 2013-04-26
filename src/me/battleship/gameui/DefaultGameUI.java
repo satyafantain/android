@@ -634,8 +634,8 @@ public class DefaultGameUI extends GameUI implements Runnable, OnTouchListener, 
 					{
 						int grabOffsetX = (int) ((float) grabX / playgroundLarge.width() * Playground.SIZE);
 						int grabOffsetY = (int) ((float) grabY / playgroundLarge.height() * Playground.SIZE);
-						int xpos = grabbedShip.getX();
-						int ypos = grabbedShip.getY();
+						int xpos = grabbedShip.getLastX();
+						int ypos = grabbedShip.getLastY();
 						
 						// This will rotate the ship around the touched field
 						xpos += grabOffsetX - grabOffsetY;

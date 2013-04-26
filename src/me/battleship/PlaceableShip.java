@@ -7,22 +7,28 @@ package me.battleship;
  */
 public class PlaceableShip extends Ship
 {
-	/** The x position where the ship will be placed if its not on the playground **/
+	/** The x position where the ship will be placed if its not on the playground */
 	private int startX;
 
-	/** The y position where the ship will be placed if its not on the playground **/
+	/** The y position where the ship will be placed if its not on the playground */
 	private int startY;
 	
+	/** The x position on which the ship was before the last movement */
+	private int lastX;
+
+	/** The y position on which the ship was before the last movement */
+	private int lastY;
+
 	/** The orientation which the ship has if its not on the playground */
 	private Orientation startOrientation;
 
-	/** The x position where the ship will be drawn **/
+	/** The x position where the ship will be drawn */
 	private int drawX;
 
-	/** The y position where the ship will be drawn **/
+	/** The y position where the ship will be drawn */
 	private int drawY;
 
-	/** Indicates whether the ship is on the playground **/
+	/** Indicates whether the ship is on the playground */
 	private boolean onPlayground;
 
 	/**
@@ -35,6 +41,8 @@ public class PlaceableShip extends Ship
 	{
 		super(ship);
 		onPlayground = ship.getX() >= 0;
+		lastX = ship.getX();
+		lastY = ship.getY();
 	}
 
 	/**
@@ -72,6 +80,34 @@ public class PlaceableShip extends Ship
 	public int getStartY()
 	{
 		return startY;
+	}
+
+	@Override
+	public void setPos(int x, int y)
+	{
+		lastX = getX();
+		lastY = getY();
+		super.setPos(x, y);
+	}
+
+	/**
+	 * The x position the ship had before the last movement
+	 * 
+	 * @return the last x position
+	 */
+	public int getLastX()
+	{
+		return lastX;
+	}
+
+	/**
+	 * The y position the ship had before the last movement
+	 * 
+	 * @return the last y position
+	 */
+	public int getLastY()
+	{
+		return lastY;
 	}
 
 	/**
