@@ -34,7 +34,7 @@ public class PlaceableShip extends Ship
 	public PlaceableShip(Ship ship)
 	{
 		super(ship);
-		onPlayground = ship.getOrientation() != null;
+		onPlayground = ship.getX() >= 0;
 	}
 
 	/**
@@ -140,7 +140,6 @@ public class PlaceableShip extends Ship
 		this.onPlayground = onPlayground;
 		if (!onPlayground)
 		{
-			setOrientation(null);
 			setPos(-1, -1);
 		}
 	}
