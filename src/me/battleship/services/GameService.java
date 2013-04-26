@@ -179,8 +179,21 @@ public class GameService extends Service
 		@Override
 		public boolean confirmShips()
 		{
-			// TODO Auto-generated method stub
-			return false;
+			if (!areAllShipsPlaced(ownShips) || !getInvalidFields(ownShips).isEmpty())
+				return false;
+			for (Ship ship : ownShips)
+			{
+				Rect rect = ship.getRect();
+				for (int y = rect.top;y <= rect.bottom;y++)
+				{
+					for (int x = rect.left;x <= rect.right;x++)
+					{
+						ownPlayground.getField(x, y).setShip(ship);
+					}
+				}
+			}
+			// TODO Send a message to the opponent
+			return true;
 		}
 
 		@Override
