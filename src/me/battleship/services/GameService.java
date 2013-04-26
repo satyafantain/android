@@ -2,14 +2,21 @@ package me.battleship.services;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import me.battleship.Orientation;
 import me.battleship.Playground;
 import me.battleship.Ship;
 import me.battleship.ShipType;
 import me.battleship.services.interfaces.GameServiceConnection;
+import me.battleship.utils.RectUtils;
 import android.app.Service;
 import android.content.Intent;
+import android.graphics.Point;
+import android.graphics.Rect;
 import android.os.Binder;
 import android.os.IBinder;
 
@@ -116,6 +123,43 @@ public class GameService extends Service
 		public Playground getOpponentPlayground()
 		{
 			return opponentPlayground;
+		}
+		
+		@Override
+		public Set<Point> getInvalidFields(Collection<Ship> ships)
+		{
+			Set<Point> fields = new HashSet<Point>();
+			for (Ship ship : ships)
+			{
+				if (ship.getX() < 0 || ship.getY() < 0)
+					continue;
+				for (Ship ship2 : ships)
+				{
+					if (ship == ship2)
+						continue;
+					if (ship2.getX() < 0 || ship2.getY() < 0)
+						continue;
+					Rect rect = RectUtils.getIntersection(ship.getRect(), ship2.getRect());
+					if (rect != null)
+					{
+						if (ship.getOrientation() == Orientation.HORIZONTAL)
+						{
+							for (int x = rect.left;x <= rect.right;x++)
+							{
+								fields.add(new Point(x, rect.top));
+							}
+						}
+						else
+						{
+							for (int y = rect.top;y <= rect.bottom;y++)
+							{
+								fields.add(new Point(rect.left, y));
+							}
+						}
+					}
+				}
+			}
+			return fields;
 		}
 
 		@Override

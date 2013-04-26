@@ -1,9 +1,12 @@
 package me.battleship.services.interfaces;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import me.battleship.Playground;
 import me.battleship.Ship;
+import android.graphics.Point;
 
 /**
  * The connection to the game service
@@ -39,6 +42,15 @@ public interface GameServiceConnection
 	 * @return the opponents playground
 	 */
 	public Playground getOpponentPlayground();
+
+	/**
+	 * Returns the fields on which the specified ships overlap
+	 * 
+	 * @param ships
+	 *           the ships
+	 * @return the fields on which the specified ships overlap
+	 */
+	public Set<Point> getInvalidFields(Collection<Ship> ships);
 
 	/**
 	 * Confirms the current placement of the ships. Validates if all ships are

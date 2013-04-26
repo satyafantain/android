@@ -2,7 +2,6 @@ package me.battleship.gameui;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -16,7 +15,6 @@ import me.battleship.Ship;
 import me.battleship.manager.BitmapManager;
 import me.battleship.services.interfaces.GameServiceConnectedListener;
 import me.battleship.ui.Button;
-import me.battleship.utils.RectUtils;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -237,7 +235,7 @@ public class DefaultGameUI extends GameUI implements Runnable, OnTouchListener, 
 	 * @param context
 	 *           the context
 	 */
-	private static void drawPlayground(Canvas canvas, Playground playground, Rect pos, Collection<Ship> ships, Context context)
+	private void drawPlayground(Canvas canvas, Playground playground, Rect pos, Collection<Ship> ships, Context context)
 	{
 		Paint paint = new Paint();
 		paint.setARGB(255, 255, 255, 255);
@@ -327,10 +325,10 @@ public class DefaultGameUI extends GameUI implements Runnable, OnTouchListener, 
 	 * @param context
 	 *           the context
 	 */
-	private static void drawFieldMarks(Canvas canvas, Rect playgroundPos, Playground playground, Collection<Ship> ships, Context context)
+	private void drawFieldMarks(Canvas canvas, Rect playgroundPos, Playground playground, Collection<Ship> ships, Context context)
 	{
 		double fieldsize = getFieldsize(playgroundPos);
-		Set<Point> invalidFields = getInvalidFields(ships);
+		Set<Point> invalidFields = gameService.getInvalidFields(ships);
 		for (Point point : invalidFields)
 		{
 			int left = (int) (point.x * fieldsize) + playgroundPos.left;
@@ -361,52 +359,6 @@ public class DefaultGameUI extends GameUI implements Runnable, OnTouchListener, 
 				}
 			}
 		}
-	}
-
-	/**
-	 * Returns the fields on which the specified ships overlap
-	 * 
-	 * @param ships
-	 *           the ships
-	 * @return the fields on which the specified ships overlap
-	 */
-	private static Set<Point> getInvalidFields(Collection<Ship> ships)
-	{
-		// TODO Move to GameService
-		Set<Point> fields = new HashSet<Point>();
-		for (Ship ship : ships)
-		{
-			if (ship instanceof PlaceableShip && !((PlaceableShip) ship).isOnPlayground())
-			{
-				continue;
-			}
-			for (Ship ship2 : ships)
-			{
-				if (ship == ship2)
-					continue;
-				if (ship2 instanceof PlaceableShip && !((PlaceableShip) ship2).isOnPlayground())
-					continue;
-				Rect rect = RectUtils.getIntersection(ship.getRect(), ship2.getRect());
-				if (rect != null)
-				{
-					if (ship.getOrientation() == Orientation.HORIZONTAL)
-					{
-						for (int x = rect.left;x <= rect.right;x++)
-						{
-							fields.add(new Point(x, rect.top));
-						}
-					}
-					else
-					{
-						for (int y = rect.top;y <= rect.bottom;y++)
-						{
-							fields.add(new Point(rect.left, y));
-						}
-					}
-				}
-			}
-		}
-		return fields;
 	}
 
 	/**
@@ -708,7 +660,7 @@ public class DefaultGameUI extends GameUI implements Runnable, OnTouchListener, 
 							return true;
 						}
 					}
-					if (getInvalidFields(ownShips).size() > 0)
+					if (gameService.getInvalidFields(ownShips).size() > 0)
 					{
 						setAcceptButtonVisible(false);
 						return true;
