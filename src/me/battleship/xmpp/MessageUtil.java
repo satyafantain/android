@@ -1,0 +1,25 @@
+package me.battleship.xmpp;
+
+import org.jivesoftware.smack.packet.Message;
+
+/**
+ * A utility for handling messages
+ * 
+ * @author Manuel Vögele
+ */
+public class MessageUtil
+{
+	/**
+	 * Returns the packet extension for the specified element
+	 * 
+	 * @param message
+	 *           the message the extension is in
+	 * @param element
+	 *           the element type
+	 * @return the packet extension
+	 */
+	public static BattleshipPacketExtension getPacketExtension(Message message, ExtensionElements element)
+	{
+		return (BattleshipPacketExtension) message.getExtension(element.getElementName(), BattleshipPacketExtension.NAMESPACE);
+	}
+}

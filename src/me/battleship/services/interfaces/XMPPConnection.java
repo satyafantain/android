@@ -34,6 +34,15 @@ public interface XMPPConnection
 	public boolean isConnected();
 
 	/**
+	 * Returns the connection to the matchmaker
+	 * 
+	 * @param listener
+	 *           a listener for messages from the matchmaker
+	 * @return the connection to the matchmaker
+	 */
+	public MatchmakerConnection getMatchmakerConnection(MatchmakerMessageListener listener);
+
+	/**
 	 * Returns the opponent connection for the specified JID
 	 * 
 	 * @param opponentJID

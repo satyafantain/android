@@ -3,7 +3,12 @@ package me.battleship.activities;
 import me.battleship.R;
 import me.battleship.services.GameService;
 import me.battleship.services.XMPPConnectionService;
+import me.battleship.services.interfaces.MatchmakerConnection;
+import me.battleship.services.interfaces.MatchmakerMessageListener;
 import me.battleship.services.interfaces.XMPPConnection;
+
+import org.jivesoftware.smack.XMPPException;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.AlertDialog.Builder;
@@ -22,7 +27,7 @@ import android.view.View.OnClickListener;
  *
  * @author Manuel Vögele
  */
-public class MatchSelectionActivity extends Activity implements OnClickListener, ServiceConnection, android.content.DialogInterface.OnClickListener
+public class MatchSelectionActivity extends Activity implements OnClickListener, MatchmakerMessageListener, ServiceConnection, android.content.DialogInterface.OnClickListener
 {
 
 	/** The log tag **/
@@ -71,9 +76,17 @@ public class MatchSelectionActivity extends Activity implements OnClickListener,
 	{
 		if (v.getId() == R.id.matchmaker_connect)
 		{
-			// TODO Implement connecting via matchmaker
-			Intent intent = new Intent(this, GameActivity.class);
-			startActivity(intent);
+			// TODO Display progress bar
+			MatchmakerConnection matchmaker = connection.getMatchmakerConnection(this);
+			try
+			{
+				matchmaker.queue();
+			}
+			catch (XMPPException e)
+			{
+				Log.e(LOG_TAG, "Queuing at the matchmaker failed", e);
+				// TODO Display error
+			}
 		}
 		else if (v.getId() == R.id.logout_button)
 		{
@@ -82,6 +95,18 @@ public class MatchSelectionActivity extends Activity implements OnClickListener,
 		}
 	}
 	
+	@Override
+	public void onOpponentAssigned(String opponentJID, String matchId)
+	{
+		Intent intent = new Intent(this, GameService.class);
+		intent.putExtra("opponentJID", opponentJID);
+		intent.putExtra("matchId", matchId);
+		startService(intent);
+
+		intent = new Intent(this, GameActivity.class);
+		startActivity(intent);
+	}
+
 	@Override
 	public void onClick(DialogInterface dialog, int which)
 	{

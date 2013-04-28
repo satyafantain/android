@@ -61,6 +61,9 @@ public class GameService extends Service implements ServiceConnection, OpponentM
 	/** The opponents JID */
 	String opponentJID;
 
+	/** The match id */
+	String matchId;
+
 	/** Indicates whether the game is in the placement phase */
 	boolean placementPhase;
 
@@ -70,6 +73,7 @@ public class GameService extends Service implements ServiceConnection, OpponentM
 		if (isRunning)
 			return START_NOT_STICKY;
 		opponentJID = intent.getStringExtra("opponentJID");
+		matchId = intent.getStringExtra("matchId");
 		Intent intent2 = new Intent(this, XMPPConnectionService.class);
 		bindService(intent2, this, BIND_AUTO_CREATE);
 		ownShips = new ArrayList<Ship>(
