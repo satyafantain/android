@@ -1,13 +1,22 @@
 package me.battleship.services;
 
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import me.battleship.services.interfaces.MatchmakerConnection;
+import me.battleship.services.interfaces.MatchmakerMessageListener;
 import me.battleship.services.interfaces.OpponentConnection;
 import me.battleship.services.interfaces.OpponentMessageListener;
 import me.battleship.services.interfaces.XMPPConnection;
 import me.battleship.xmpp.AlreadyConnectedException;
+import me.battleship.xmpp.BattleshipPacketExtension;
+import me.battleship.xmpp.ExtensionElements;
 import me.battleship.xmpp.JID;
+import me.battleship.xmpp.MessageUtil;
+import me.battleship.xmpp.message.QueueMessage;
 
 import org.jivesoftware.smack.Chat;
-import org.jivesoftware.smack.ChatManager;
 import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.MessageListener;
 import org.jivesoftware.smack.XMPPException;
@@ -34,6 +43,9 @@ public class XMPPConnectionService extends Service
 
 	/** The default resource */
 	public static final String DEFAULT_RESOURCE = "battleshipme";
+
+	/** The JID of the matchmaker */
+	public static final String MATCHMAKER_JID = "matchmaker@battleship.me";
 
 	/** The connection to the XMPPP server */
 	private XMPPConnection xmppConnection;
@@ -111,12 +123,18 @@ public class XMPPConnectionService extends Service
 		{
 			return connection != null;
 		}
+		
+		@Override
+		public MatchmakerConnection getMatchmakerConnection(MatchmakerMessageListener listener)
+		{
+			Chat chat = connection.getChatManager().createChat(MATCHMAKER_JID, null);
+			return new MatchmakerConnectionImpl(chat, listener);
+		}
 
 		@Override
 		public OpponentConnection getOpponentConnection(String opponentJID, OpponentMessageListener listener)
 		{
-			ChatManager chatManager = connection.getChatManager();
-			Chat chat = chatManager.createChat(opponentJID, null);
+			Chat chat = connection.getChatManager().createChat(opponentJID, null);
 			return new OpponentConnectionImpl(chat, listener);
 		}
 
@@ -139,6 +157,17 @@ public class XMPPConnectionService extends Service
 		}
 
 		/**
+		 * Writes an unparsable message to the log
+		 * 
+		 * @param message
+		 *           the message
+		 */
+		void logUnparsableMessage(Message message)
+		{
+			Log.i(LOG_TAG, "Could not parse received message: " + message.toXML());
+		}
+
+		/**
 		 * The implementation of the {@link OpponentConnection} interface
 		 * 
 		 * @author Manuel Vögele
@@ -151,6 +180,14 @@ public class XMPPConnectionService extends Service
 			/** The listener for messages from the opponent */
 			private OpponentMessageListener listener;
 
+			/**
+			 * Instantiates a new {@link OpponentConnectionImpl}
+			 * 
+			 * @param chat
+			 *           the chat
+			 * @param listener
+			 *           the listener for messages from the matchmaker
+			 */
 			public OpponentConnectionImpl(Chat chat, OpponentMessageListener listener)
 			{
 				this.chat = chat;
@@ -168,6 +205,123 @@ public class XMPPConnectionService extends Service
 			public void processMessage(Chat arg0, Message arg1)
 			{
 				// TODO Auto-generated method stub
+			}
+		}
+
+		/**
+		 * The implementation of the {@link MatchmakerConnection} interface
+		 * 
+		 * @author Manuel Vögele
+		 */
+		private class MatchmakerConnectionImpl extends TimerTask implements MatchmakerConnection, MessageListener
+		{
+			/** The chat */
+			private Chat chat;
+
+			/** The listener for messages from the opponent */
+			private MatchmakerMessageListener listener;
+
+			/** The queue id */
+			private String queueId;
+
+			/** A timer */
+			private Timer timer;
+
+			/**
+			 * Instantiates a new {@link MatchmakerConnectionImpl}
+			 * 
+			 * @param chat
+			 *           the chat
+			 * @param listener
+			 *           the listener for messages from the matchmaker
+			 */
+			public MatchmakerConnectionImpl(Chat chat, MatchmakerMessageListener listener)
+			{
+				this.chat = chat;
+				chat.addMessageListener(this);
+				this.listener = listener;
+				this.timer = new Timer(true);
+			}
+
+			@Override
+			public void queue() throws XMPPException
+			{
+				Log.i(LOG_TAG, "Queuing at matchmaker");
+				if (queueId != null)
+				{
+					Log.i(LOG_TAG, "Allready queued. Queuing aborted.");
+					return;
+				}
+				chat.sendMessage(new QueueMessage());
+			}
+
+			@Override
+			public void cleanup()
+			{
+				chat.removeMessageListener(this);
+				timer.cancel();
+			}
+
+			@Override
+			public void processMessage(@SuppressWarnings("hiding") Chat chat, Message message)
+			{
+				BattleshipPacketExtension root = MessageUtil.getPacketExtension(message, ExtensionElements.BATTLESHIP);
+				BattleshipPacketExtension queuing = root.getSubElement(ExtensionElements.QUEUEING);
+				Map<String, String> attributes = queuing.getAttributes();
+				String action = attributes.get("action");
+				if (action == null)
+				{
+					logUnparsableMessage(message);
+					return;
+				}
+				if (action.equals("success"))
+				{
+					queueId = attributes.get("id");
+					if (Log.isLoggable(LOG_TAG, Log.INFO))
+						Log.i(LOG_TAG, "Received queue id " + queueId);
+					timer.scheduleAtFixedRate(this, 15000, 15000);
+					return;
+				}
+				if (action.equals("ping"))
+				{
+					Log.i(LOG_TAG, "Received ping from Matchmaker");
+					return;
+				}
+				if (action.equals("assign"))
+				{
+					timer.cancel();
+					String opponentJID = attributes.get("jid");
+					String matchId = attributes.get("mid");
+					if (Log.isLoggable(LOG_TAG, Log.INFO))
+						Log.i(LOG_TAG, "Assigned to: " + opponentJID + " mid: " + matchId);
+					try
+					{
+						chat.sendMessage(new QueueMessage(opponentJID, matchId));
+					}
+					catch (XMPPException e)
+					{
+						Log.e(LOG_TAG, "Error while confirming assignment", e);
+					}
+					chat.removeMessageListener(this);
+					queueId = null;
+					listener.onOpponentAssigned(opponentJID, matchId);
+					return;
+				}
+				logUnparsableMessage(message);
+			}
+
+			@Override
+			public void run()
+			{
+				Log.i(LOG_TAG, "Sending ping to Matchmaker");
+				try
+				{
+					chat.sendMessage(new QueueMessage(queueId));
+				}
+				catch (XMPPException e)
+				{
+					Log.e(LOG_TAG, "Error while sending ping to Matchmaker", e);
+				}
 			}
 		}
 	}
